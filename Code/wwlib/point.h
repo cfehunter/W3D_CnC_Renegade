@@ -130,6 +130,10 @@ class TPoint3D : public TPoint2D<T> {
 		typedef TPoint2D<T> BASECLASS;
 
 	public:
+		//#CFE_TODO Identify why X and Y are clashing in scope
+		using TPoint2D<T>::X;
+		using TPoint2D<T>::Y;
+
 		TPoint3D(void) {}		// Default constructor does nothing by design.
 		TPoint3D(T x, T y, T z) : TPoint2D<T>(x, y), Z(z) {}
 		TPoint3D(BASECLASS const & rvalue) : TPoint2D<T>(rvalue), Z(0) {}

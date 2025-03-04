@@ -25,6 +25,7 @@
 
 #include "always.h"
 #include "thread.h"
+#include <atomic>
 
 
 // Always use mutex or critical section when accessing the same data from multiple threads!
@@ -113,41 +114,29 @@ public:
 // Fast critical section is really fast version of CriticalSection. The downside
 // of it is that it can't be locked multiple times from the same thread.
 //
+// CFE 04/03/2025 - MSVC x64 doesn't support inline assembly. Reimplement with modern C++ atomics.
 // ----------------------------------------------------------------------------
 
 class FastCriticalSectionClass
 {
-	volatile unsigned Flag;
+	std::atomic_flag Flag = ATOMIC_FLAG_INIT;
 
 	void Thread_Safe_Set_Flag()
 	{
-		volatile unsigned& nFlag=Flag;
-
-		#define ts_lock _emit 0xF0
-		assert(((unsigned)&nFlag % 4) == 0);
-
-		__asm mov ebx, [nFlag]
-		__asm ts_lock
-		__asm bts dword ptr [ebx], 0
-		__asm jc The_Bit_Was_Previously_Set_So_Try_Again
-		return;
-
-		The_Bit_Was_Previously_Set_So_Try_Again:
-		ThreadClass::Switch_Thread();
-		__asm mov ebx, [nFlag]
-		__asm ts_lock
-		__asm bts dword ptr [ebx], 0
-		__asm jc  The_Bit_Was_Previously_Set_So_Try_Again
+		while (std::atomic_flag_test_and_set_explicit(&Flag, std::memory_order_acquire))
+		{
+			ThreadClass::Switch_Thread();
+		}
 	}
 
-	WWINLINE void Thread_Safe_Clear_Flag()
+	void Thread_Safe_Clear_Flag()
 	{
-		Flag = 0;
+		std::atomic_flag_clear_explicit(&Flag, std::memory_order_release);
 	}
 
 public:
 	// Name can (and usually should) be NULL. Use name only if you wish to create a globally unique mutex
-	FastCriticalSectionClass() : Flag(0) {}
+	FastCriticalSectionClass() {}
 
 	class LockClass
 	{

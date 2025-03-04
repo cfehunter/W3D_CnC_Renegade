@@ -1211,6 +1211,26 @@ void GenericDataSafeClass::Free_Handle_ID(int list, int id)
 	}
 }
 
+/***********************************************************************************************
+ * GenericDataSafeClass::Alloc_Type_Code() -- Allocate a new sequential type code              *
+ *                                                                                             *
+ *                                                                                             *
+ *                                                                                             *
+ * INPUT:    Nothing                                                                           *
+ *                                                                                             *
+ * OUTPUT:   Sequential type code. Unique in this module.                                      *
+ *                                                                                             *
+ * WARNINGS: None                                                                              *
+ *                                                                                             *
+ * HISTORY:                                                                                    *
+ *   6/3/2025 CFE : Created                                                                    *
+ *=============================================================================================*/
+unsigned long GenericDataSafeClass::Alloc_Type_Code()
+{
+	// Zero is used as invalid
+	static unsigned long nextID = 1;
+	return nextID++;
+}
 
 /***********************************************************************************************
  * GenericDataSafeClass::Say_Security_Fault -- Security fault display action                   *

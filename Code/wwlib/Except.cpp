@@ -72,6 +72,14 @@
 void DebugString(char const *, ...){};
 #endif //WWDEBUG
 
+#ifdef _WIN64
+// Print pointers as 16 hex digits
+#define PRIPTRFMT "%016X"
+#else
+// Print pointers as 8 hex digits
+#define PRIPTRFMT "%08X"
+#endif
+
 /*
 ** Enable this define to get the 'demo timed out' message on a crash or assert failure.
 */
@@ -167,17 +175,21 @@ static char const *ImagehelpFunctionNames[] =
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   8/22/00 11:42AM ST : Created                                                              *
+ *   03/04/2025 CFE     : Switch out ASM exception for debug trap and abort                    *
  *=============================================================================================*/
 int __cdecl _purecall(void)
 {
 	int return_code = 0;
 
 #ifdef WWDEBUG
-	/*
-	** Use int3 to cause an exception.
-	*/
+	// Break in the debugger and then abort
 	WWDEBUG_SAY(("Pure Virtual Function call. Oh No!\n"));
-	_asm int 0x03;
+#ifdef _WIN32
+	DebugBreak();
+#else
+	raise(SIGTRAP);
+#endif //_WIN32
+	abort();
 #endif	//_DEBUG_ASSERT
 
 	return(return_code);
@@ -278,6 +290,7 @@ static void Add_Txt (char const *txt)
  *                                                                                             *
  * HISTORY:                                                                                    *
  *    7/22/97 12:21PM ST : Created                                                             *
+ *    03/04/2025 CFE     : Converted for win64. Switched to safe print functions.              *
  *=============================================================================================*/
 void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 {
@@ -449,7 +462,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	** For access violations, print out the violation address and if it was read or write.
 	*/
 	if (e_info->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
-		sprintf(scrap, "Access address:%08X ", access_address);
+		snprintf(scrap, sizeof(scrap), "Access address:" PRIPTRFMT " ", access_address);
 		Add_Txt(scrap);
 		if (access_read_write) {
 			Add_Txt("was written to.\r\n");
@@ -463,24 +476,29 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	** If symbols are available, print out the exception eip address and the name of the
 	** function it represents.
 	*/
+#ifdef _WIN64
+	const auto executionAddress = context->Rip;
+#else
+	const auto executionAddress = context->Eip;
+#endif //_WIN64
 	memset(symptr, 0, sizeof (IMAGEHLP_SYMBOL));
 	symptr->SizeOfStruct = sizeof (IMAGEHLP_SYMBOL);
 	symptr->MaxNameLength = 256-sizeof (IMAGEHLP_SYMBOL);
 	symptr->Size = 0;
-	symptr->Address = context->Eip;
+	symptr->Address = executionAddress;
 
-	if (!IsBadCodePtr((FARPROC)context->Eip)) {
-		if (_SymGetSymFromAddr != NULL && _SymGetSymFromAddr (GetCurrentProcess(), context->Eip, &displacement, symptr)) {
-			sprintf (scrap, "Exception occurred at %08X - %s + %08X\r\n", context->Eip, symptr->Name, displacement);
+	if (!IsBadCodePtr((FARPROC)executionAddress)) {
+		if (_SymGetSymFromAddr != NULL && _SymGetSymFromAddr (GetCurrentProcess(), executionAddress, &displacement, symptr)) {
+			snprintf(scrap, sizeof(scrap), "Exception occurred at " PRIPTRFMT " - %s + " PRIPTRFMT "\r\n", executionAddress, symptr->Name, displacement);
 		} else {
 			DebugString ("Exception Handler: Failed to get symbol for EIP\r\n");
 			if (_SymGetSymFromAddr != NULL) {
 				DebugString ("Exception Handler: SymGetSymFromAddr failed with code %d - %s\n", GetLastError(), Last_Error_Text());
 			}
-			sprintf (scrap, "Exception occurred at %08X\r\n", context->Eip);
+			snprintf(scrap, sizeof(scrap), "Exception occurred at " PRIPTRFMT "\r\n", executionAddress);
 		}
 	} else {
-		DebugString ("Exception Handler: context->Eip is bad code pointer\n");
+		DebugString ("Exception Handler: executionAddress is bad code pointer\n");
 	}
 
 	Add_Txt (scrap);
@@ -495,6 +513,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	int num_addresses = Stack_Walk(return_addresses, 256, context);
 
 	if (num_addresses) {
+		char symbuf[256];
 		for (int s=0 ; s<num_addresses ; s++) {
 			unsigned long temp_addr = return_addresses[s];
 			displacement = 0;
@@ -510,13 +529,11 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 				symptr->Address = temp_addr;
 
 				if (_SymGetSymFromAddr != NULL && _SymGetSymFromAddr (GetCurrentProcess(), temp_addr, &displacement, symptr)) {
-					char symbuf[256];
-					sprintf(symbuf, "%s + %08X\r\n", symptr->Name, displacement);
+					snprintf(symbuf, sizeof(symbuf), "%s + " PRIPTRFMT "\r\n", symptr->Name, displacement);
 					Add_Txt(symbuf);
 				}
 			} else {
-				char symbuf[256];
-				sprintf(symbuf, "%08x\r\n", temp_addr);
+				snprintf(symbuf, sizeof(symbuf), "" PRIPTRFMT "\r\n", temp_addr);
 				Add_Txt(symbuf);
 			}
 		}
@@ -532,10 +549,10 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	/*
 	** Add in the version info.
 	*/
-	sprintf(scrap, "\r\nVersion %s\r\n", Version_Name());
+	snprintf(scrap, sizeof(scrap), "\r\nVersion %s\r\n", Version_Name());
 	Add_Txt(scrap);
 
-	sprintf(scrap, "Internal Version %s\r\n", VerNum.Version_Name());
+	snprintf(scrap, sizeof(scrap), "Internal Version %s\r\n", VerNum.Version_Name());
 	Add_Txt(scrap);
 
 	char buildinfo[128];
@@ -548,7 +565,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 #endif	//(0)
 
 	if (AppVersionCallback) {
-		sprintf(scrap, "%s\r\n\r\n", AppVersionCallback());
+		snprintf(scrap, sizeof(scrap), "%s\r\n\r\n", AppVersionCallback());
 		Add_Txt(scrap);
 	}
 
@@ -561,7 +578,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	** Get the thread info from ThreadClass.
 	*/
 	for (int thread = 0 ; thread < ThreadList.Count() ; thread++) {
-		sprintf(scrap, "  ID: %08X - %s", ThreadList[thread]->ThreadID, ThreadList[thread]->ThreadName);
+		snprintf(scrap, sizeof(scrap), "  ID: " PRIPTRFMT " - %s", ThreadList[thread]->ThreadID, ThreadList[thread]->ThreadName);
 		Add_Txt(scrap);
 		if (GetCurrentThreadId() == ThreadList[thread]->ThreadID) {
 			Add_Txt("   ***CURRENT THREAD***");
@@ -572,7 +589,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	/*
 	** CPU type
 	*/
-	sprintf(scrap, "\r\nCPU %s, %d Mhz, Vendor: %s\r\n", (char*)CPUDetectClass::Get_Processor_String(), Get_RDTSC_CPU_Speed(), (char*)CPUDetectClass::Get_Processor_Manufacturer_Name());
+	snprintf(scrap, sizeof(scrap), "\r\nCPU %s, %d Mhz, Vendor: %s\r\n", (char*)CPUDetectClass::Get_Processor_String(), Get_RDTSC_CPU_Speed(), (char*)CPUDetectClass::Get_Processor_Manufacturer_Name());
 	Add_Txt(scrap);
 
 
@@ -583,81 +600,93 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	/*
 	** Dump the registers.
 	*/
-	sprintf(scrap, "Eip:%08X\tEsp:%08X\tEbp:%08X\r\n", context->Eip, context->Esp, context->Ebp);
+#ifdef _WIN64
+	snprintf(scrap, sizeof(scrap), "Rip:" PRIPTRFMT "\tRsp:" PRIPTRFMT "\tRbp:" PRIPTRFMT "\r\n", context->Rip, context->Rsp, context->Rbp);
 	Add_Txt(scrap);
-	sprintf(scrap, "Eax:%08X\tEbx:%08X\tEcx:%08X\r\n", context->Eax, context->Ebx, context->Ecx);
+	snprintf(scrap, sizeof(scrap), "Rax:" PRIPTRFMT "\tRbx:" PRIPTRFMT "\tRcx:" PRIPTRFMT "\r\n", context->Rax, context->Rbx, context->Rcx);
 	Add_Txt(scrap);
-	sprintf(scrap, "Edx:%08X\tEsi:%08X\tEdi:%08X\r\n", context->Edx, context->Esi, context->Edi);
+	snprintf(scrap, sizeof(scrap), "Rdx:" PRIPTRFMT "\tRsi:" PRIPTRFMT "\tRdi:" PRIPTRFMT "\r\n", context->Rdx, context->Rsi, context->Rdi);
 	Add_Txt(scrap);
-	sprintf(scrap, "EFlags:%08X \r\n", context->EFlags);
+	snprintf(scrap, sizeof(scrap), "EFlags:" PRIPTRFMT " \r\n", context->EFlags);
 	Add_Txt(scrap);
-	sprintf(scrap, "CS:%04x  SS:%04x  DS:%04x  ES:%04x  FS:%04x  GS:%04x\r\n", context->SegCs, context->SegSs, context->SegDs, context->SegEs, context->SegFs, context->SegGs);
+	snprintf(scrap, sizeof(scrap), "CS:%04x  SS:%04x  DS:%04x  ES:%04x  FS:%04x  GS:%04x\r\n", context->SegCs, context->SegSs, context->SegDs, context->SegEs, context->SegFs, context->SegGs);
 	Add_Txt(scrap);
+#else
+	snprintf(scrap, sizeof(scrap), "Eip:" PRIPTRFMT "\tEsp:" PRIPTRFMT "\tEbp:" PRIPTRFMT "\r\n", executionAddress, context->Esp, context->Ebp);
+	Add_Txt(scrap);
+	snprintf(scrap, sizeof(scrap), "Eax:" PRIPTRFMT "\tEbx:" PRIPTRFMT "\tEcx:" PRIPTRFMT "\r\n", context->Eax, context->Ebx, context->Ecx);
+	Add_Txt(scrap);
+	snprintf(scrap, sizeof(scrap), "Edx:" PRIPTRFMT "\tEsi:" PRIPTRFMT "\tEdi:" PRIPTRFMT "\r\n", context->Edx, context->Esi, context->Edi);
+	Add_Txt(scrap);
+	snprintf(scrap, sizeof(scrap), "EFlags:" PRIPTRFMT " \r\n", context->EFlags);
+	Add_Txt(scrap);
+	snprintf(scrap, sizeof(scrap), "CS:%04x  SS:%04x  DS:%04x  ES:%04x  FS:%04x  GS:%04x\r\n", context->SegCs, context->SegSs, context->SegDs, context->SegEs, context->SegFs, context->SegGs);
+	Add_Txt(scrap);
+#endif //_WIN64
 
+	
+#ifdef _WIN64
+	const auto& floatSave = context->FltSave;
+#else
+	const auto& floatSave = context->FloatSave;
+#endif //_WIN64
 
 	/*
 	** Now the FP registers.
 	*/
 	Add_Txt("\r\nFloating point status\r\n");
-	sprintf(scrap, "     Control word: %08x\r\n", context->FloatSave.ControlWord);
+	snprintf(scrap, sizeof(scrap), "     Control word: " PRIPTRFMT "\r\n", floatSave.ControlWord);
 	Add_Txt(scrap);
-	sprintf(scrap, "      Status word: %08x\r\n", context->FloatSave.StatusWord);
+	snprintf(scrap, sizeof(scrap), "      Status word: " PRIPTRFMT "\r\n", floatSave.StatusWord);
 	Add_Txt(scrap);
-	sprintf(scrap, "         Tag word: %08x\r\n", context->FloatSave.TagWord);
+	snprintf(scrap, sizeof(scrap), "         Tag word: " PRIPTRFMT "\r\n", floatSave.TagWord);
 	Add_Txt(scrap);
-	sprintf(scrap, "     Error Offset: %08x\r\n", context->FloatSave.ErrorOffset);
+	snprintf(scrap, sizeof(scrap), "     Error Offset: " PRIPTRFMT "\r\n", floatSave.ErrorOffset);
 	Add_Txt(scrap);
-	sprintf(scrap, "   Error Selector: %08x\r\n", context->FloatSave.ErrorSelector);
+	snprintf(scrap, sizeof(scrap), "   Error Selector: " PRIPTRFMT "\r\n", floatSave.ErrorSelector);
 	Add_Txt(scrap);
-	sprintf(scrap, "      Data Offset: %08x\r\n", context->FloatSave.DataOffset);
+	snprintf(scrap, sizeof(scrap), "      Data Offset: " PRIPTRFMT "\r\n", floatSave.DataOffset);
 	Add_Txt(scrap);
-	sprintf(scrap, "    Data Selector: %08x\r\n", context->FloatSave.DataSelector);
+	snprintf(scrap, sizeof(scrap), "    Data Selector: " PRIPTRFMT "\r\n", floatSave.DataSelector);
 	Add_Txt(scrap);
-	//sprintf(scrap, "      Cr0NpxState: %08x\r\n", context->FloatSave.Cr0NpxState);
+	//snprintf(scrap, sizeof(scrap), "      Cr0NpxState: " PRIPTRFMT "\r\n", floatSave.Cr0NpxState);
 	//Add_Txt(scrap);
 
-	for (int fp=0 ; fp<SIZE_OF_80387_REGISTERS / 10 ; fp++) {
-		sprintf(scrap, "ST%d : ", fp);
+	// x87 registers are only present in the 32-bit version of the context structure
+	// This entire file needs replacing for non-windows platforms
+#if !defined(_WIN64)
+	for (int fp=0 ; fp < 8; fp++) {
+		snprintf(scrap, sizeof(scrap), "ST%d : ", fp);
 		Add_Txt(scrap);
 		for (int b=0 ; b<10 ; b++) {
-			sprintf(scrap, "%02X", context->FloatSave.RegisterArea[(fp*10) + b]);
+			snprintf(scrap, sizeof(scrap), "%02X", floatSave.RegisterArea[(fp*10) + b]);
 			Add_Txt(scrap);
 		}
 
-		void *fp_data_ptr = (void*)(&context->FloatSave.RegisterArea[fp*10]);
-		double fp_value;
+		void *fp_data_ptr = (void*)(&floatSave.RegisterArea[fp*10]);
 
-		/*
-		** Convert FP dump from temporary real value (10 bytes) to double (8 bytes).
-		*/
-		_asm {
-			push	eax
-			mov	eax,fp_data_ptr
-			fld   tbyte ptr [eax]
-			fstp	qword ptr [fp_value]
-			pop	eax
-		}
-		sprintf(scrap, "   %+#.17e\r\n", fp_value);
+		snprintf(scrap, sizeof(scrap), "   %+#.17e\r\n", reinterpret_cast<double*>(floatSave.RegisterArea[fp*10]));
 		Add_Txt(scrap);
 	}
+#endif //!defined(_WIN64)
 
 	/*
-	** Dump the bytes at EIP. This will make it easier to match the crash address with later versions of the game.
+	** Dump the bytes at the execution address. This will make it easier to match the crash address with later versions of the game.
 	*/
 	DebugString("EIP bytes dump...\n");
-	sprintf(scrap, "\r\nBytes at CS:EIP (%08X)  : ", context->Eip);
+	snprintf(scrap, sizeof(scrap), "\r\nBytes at CS:EIP (" PRIPTRFMT ")  : ", executionAddress);
 
-	unsigned char *eip_ptr = (unsigned char *) (context->Eip);
+	unsigned char *execution_ptr = (unsigned char *) (executionAddress);
 	char bytestr[32];
 
 	for (int c = 0 ; c < 32 ; c++) {
-		if (IsBadReadPtr(eip_ptr, 1)) {
+		if (IsBadReadPtr(execution_ptr, 1)) {
 			strcat(scrap, "?? ");
 		} else {
-			sprintf(bytestr, "%02X ", *eip_ptr);
+			snprintf(bytestr, sizeof(bytestr), "%02X ", *execution_ptr);
 			strcat(scrap, bytestr);
 		}
-		eip_ptr++;
+		execution_ptr++;
 	}
 
 	strcat(scrap, "\r\n\r\n");
@@ -668,24 +697,28 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	*/
 	DebugString("Stack dump...\n");
 	Add_Txt("Stack dump (* indicates possible code address) :\r\n");
+#ifdef _WIN64
+	unsigned long* stackptr = (unsigned long*)context->Rsp;
+#else
 	unsigned long *stackptr = (unsigned long*) context->Esp;
+#endif // _WIN64
 
 	for (int j=0 ; j<2048 ; j++) {
 		if (IsBadReadPtr(stackptr, 4)) {
 			/*
 			** The stack contents cannot be read so just print up question marks.
 			*/
-			sprintf(scrap, "%08p: ", stackptr);
+			snprintf(scrap, sizeof(scrap), "%08p: ", stackptr);
 			strcat(scrap, "????????\r\n");
 		} else {
 			/*
 			** If this stack address is in our memory space then try to match it with a code symbol.
 			*/
 			if (IsBadCodePtr((FARPROC)*stackptr)) {
-				sprintf(scrap, "%08p: %08X ", stackptr, *stackptr);
+				snprintf(scrap, sizeof(scrap), "%08p: " PRIPTRFMT " ", stackptr, *stackptr);
 				strcat(scrap, "DATA_PTR\r\n");
 			} else {
-				sprintf(scrap, "%08p: %08X", stackptr, *stackptr);
+				snprintf(scrap, sizeof(scrap), "%08p: " PRIPTRFMT "", stackptr, *stackptr);
 
 				if (symbols_available) {
 					symptr->SizeOfStruct = sizeof(symbol);
@@ -695,7 +728,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 
 					if (_SymGetSymFromAddr != NULL && _SymGetSymFromAddr (GetCurrentProcess(), *stackptr, &displacement, symptr)) {
 						char symbuf[256];
-						sprintf(symbuf, " - %s + %08X", symptr->Name, displacement);
+						snprintf(symbuf, sizeof(symbuf), " - %s + " PRIPTRFMT "", symptr->Name, displacement);
 						strcat(scrap, symbuf);
 					}
 				} else {
@@ -1250,10 +1283,17 @@ here:
 	/*
 	** Use the context struct if it was provided.
 	*/
-	if (context) {
+	if (context)
+	{
+#ifdef _WIN64
+		stack_frame.AddrPC.Offset = context->Rip;
+		stack_frame.AddrStack.Offset = context->Rsp;
+		stack_frame.AddrFrame.Offset = context->Rbp;
+#else
 		stack_frame.AddrPC.Offset = context->Eip;
 		stack_frame.AddrStack.Offset = context->Esp;
 		stack_frame.AddrFrame.Offset = context->Ebp;
+#endif //_WIN64
 	}
 
 	int pointer_index = 0;
@@ -1262,7 +1302,7 @@ here:
 	** Walk the stack by the requested number of return address iterations.
 	*/
 	for (int i = 0; i < num_addresses + 1; i++) {
-		if (_StackWalk(IMAGE_FILE_MACHINE_I386, GetCurrentProcess(), GetCurrentThread(), &stack_frame, NULL, NULL, _SymFunctionTableAccess, _SymGetModuleBase, NULL)) {
+		if (_StackWalk(IMAGE_FILE_MACHINE_I386, GetCurrentProcess(), GetCurrentThread(), &stack_frame, NULL, NULL, SymFunctionTableAccess, SymGetModuleBase, NULL)) {
 
 			/*
 			** First result will always be the return address we were called from.

@@ -111,7 +111,7 @@ bool 	AnimChannelClass::Save( ChunkSaveClass & csave )
 		if ( Animation ) {
 			csave.Begin_Micro_Chunk( MICROCHUNKID_ANIMATION_NAME );
 			const char * anim_name = Animation->Get_Name();
-			csave.Write( anim_name, strlen( anim_name ) + 1);
+			csave.Write( anim_name, (uint32)(strlen( anim_name ) + 1));
 			csave.End_Micro_Chunk();
 		}
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_FRAME, Frame );

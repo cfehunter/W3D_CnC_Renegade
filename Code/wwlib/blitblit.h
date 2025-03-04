@@ -454,6 +454,8 @@ class BlitTransLucent75 : public Blitter {
 
 inline void BlitTrans<unsigned char>::BlitForward(void * dest, void const * source, int len) const
 {
+	// Original ASM
+	/*
 	__asm {
 		mov	esi,[source]
 		mov	edi,[dest]
@@ -473,53 +475,84 @@ again:
 		mov	[edi],al
 		jmp	again
 	}
-fini:;
+fini:;*/
+
+	// Walk the span and copy any non-zero bytes
+	unsigned char* dest_bytes = static_cast<unsigned char*>(dest);
+	const unsigned char* src_bytes = static_cast<const unsigned char*>(source);
+	for (int i = 0; i < len; ++i)
+	{
+		if (*src_bytes)
+			*dest_bytes = *src_bytes;
+
+		++dest_bytes;
+		++src_bytes;
+	}
 }
 
 
 inline void BlitTransXlat<unsigned short>::BlitForward(void * dest, void const * source, int len) const
 {
-	unsigned short const * xlator = TranslateTable;
 
+	// Original ASM
+	/*
+	unsigned short const * xlator = TranslateTable;
 	__asm {
-		mov	ebx,[xlator]
-		mov	ecx,[len]
-		inc	ecx
-		mov	edi,[dest]
-		sub	edi,2
-		mov	esi,[source]
-		xor	eax,eax
+		mov	ebx,[xlator] // Load translation table into ebx register
+		mov	ecx,[len] // Load length into ecx register
+		inc	ecx // Add one length (to account for the early dec)
+		mov	edi,[dest] // Load dest pointer into edi
+		sub	edi,2 // Subtract 2 from dest pointer (to account for early add)
+		mov	esi,[source] // Load source pointer into esi register
+		xor	eax,eax // Zero eax register
 	}
 again:
 	__asm {
-		dec	ecx
-		jz		over
-		add	edi,2
-		mov	al,[esi]
-		inc	esi
-		or		al,al
-		jz		again
-		mov	dx,[ebx+eax*2]
-		mov	[edi],dx
-		jmp	again
+		dec	ecx // Dec length count
+		jz		over // End if zero length remains
+		add	edi,2 // Add 2 to destination pointer
+		mov	al,[esi] // Load source value into al register
+		inc	esi // Increment the source pointer
+		or		al,al // Test if al register is non-zero
+		jz		again // Skip copy if source byte is zero
+		mov	dx,[ebx+eax*2] // Index into the translation table with the source byte, and move the short value into the dx register
+		mov	[edi],dx // Copy the translated short value to the destination
+		jmp	again // Repeat
 	}
-over:;
+over:;*/
+
+	// Walk the span, index into the translation table with the byte value and copy over non-zero values
+	const unsigned char* src_bytes = static_cast<const unsigned char*>(source);
+	unsigned short* dest_shorts = static_cast<unsigned short*>(dest);
+	for (int i = 0; i < len; ++i)
+	{
+		if (*src_bytes)
+			*dest_shorts = TranslateTable[*src_bytes];
+
+		++dest_shorts;
+		++src_bytes;
+	}
 }
 
 
 inline void BlitTransRemapXlat<unsigned short>::BlitForward(void * dest, void const * source, int len) const
 {
+
+	//CFE Note: BlitTransXlat above increments the length by 1 to initialise, this version doesn't. Off by 1 bug?
+
+	// Original ASM
+#if 0
 	unsigned short const * translator = TranslateTable;
 	unsigned char const * remapper = RemapTable;
 
 	__asm {
-		mov	ecx,[len]
-		mov	edi,[dest]
-		sub	edi,2
-		mov	esi,[source]
-		mov	ebx,[remapper]
-		mov	edx,[translator]
-		xor	eax,eax
+		mov	ecx,[len] // Load length into ecx register
+		mov	edi,[dest] // load destination pointer into edi register
+		sub	edi,2 // Substract 2 from destination pointer (to account for early add)
+		mov	esi,[source] // Load source pointer into esi register
+		mov	ebx,[remapper] // Load remap table into ebx register
+		mov	edx,[translator] // Load translation table into edx register
+		xor	eax,eax // Zero eax register
 	}
 
 	/*
@@ -528,19 +561,32 @@ inline void BlitTransRemapXlat<unsigned short>::BlitForward(void * dest, void co
 	*/
 again:
 	__asm {
-		dec	ecx
-		jz		over
-		add	edi,2
-		xor	eax,eax
-		lodsb
-		or		al,al
-		jz		again
+		dec	ecx // Decrement remaining length
+		jz		over // End if remaining length is zero
+		add	edi,2 // Add 2 to the destination pointer
+		xor	eax,eax // Zero eax register (al is the low byte of eax)
+		lodsb // load a byte from esi and increment by 1
+		or		al,al // Test if the loaded byte is non-zero
+		jz		again // If the byte is zero (transparent) skip
 		mov	al,[ebx+eax]				// First remap step (8 bit to 8 bit).
 		mov	ax,[edx+eax*2]				// Second remap step (8 bit to 16 bit).
 		mov	[edi],ax
 		jmp	again
 	}
 over:;
+#endif
+
+	// Walk the span, index into the remap table to get the index to the translation table and copy over non-zero values
+	const unsigned char* src_bytes = static_cast<const unsigned char*>(source);
+	unsigned short* dest_shorts = static_cast<unsigned short*>(dest);
+	for (int i = 0; i < len; ++i)
+	{
+		if (*src_bytes)
+			*dest_shorts = TranslateTable[RemapTable[*src_bytes]];
+
+		++dest_shorts;
+		++src_bytes;
+	}
 }
 
 
@@ -549,14 +595,16 @@ inline void BlitTransZRemapXlat<unsigned short>::BlitForward(void * dest, void c
 	unsigned short const * translator = TranslateTable;
 	unsigned char const * remapper = *RemapTable;
 
+	// Original asm
+#if 0
 	__asm {
-		mov	ecx,[len]
-		mov	edi,[dest]
-		sub	edi,2
-		mov	esi,[source]
-		mov	ebx,[remapper]
-		mov	edx,[translator]
-		xor	eax,eax
+		mov	ecx,[len] // Load length into ecx register
+		mov	edi,[dest] // Load destination pointer into edi register
+		sub	edi,2 // decrement 2 from dest pointer (to account for early dec)
+		mov	esi,[source] // load source pointer into esi register
+		mov	ebx,[remapper] // load remap table into ebx register
+		mov	edx,[translator] // load translation table into edx register
+		xor	eax,eax // zero eax (and therefore al) register
 	}
 
 	/*
@@ -565,24 +613,39 @@ inline void BlitTransZRemapXlat<unsigned short>::BlitForward(void * dest, void c
 	*/
 again:
 	__asm {
-		dec	ecx
-		jz		over
-		add	edi,2
-		xor	eax,eax
-		lodsb
-		or		al,al
-		jz		again
+		dec	ecx // decrement the remaining length
+		jz		over //End if remaining length is zero
+		add	edi,2 // Add 2 to destination pointer
+		xor	eax,eax // zero eax (and al) register
+		lodsb // load a byte from source into al (and increment source)
+		or		al,al // test if al is non-zero
+		jz		again // if this byte is zero, skip the copy
 		mov	al,[ebx+eax]				// First remap step (8 bit to 8 bit).
 		mov	ax,[edx+eax*2]				// Second remap step (8 bit to 16 bit).
 		mov	[edi],ax
 		jmp	again
 	}
 over:;
+#endif
+
+	// Walk the span, index into the remap table to get the index to the translation table and copy over non-zero values
+	const unsigned char* src_bytes = static_cast<const unsigned char*>(source);
+	unsigned short* dest_shorts = static_cast<unsigned short*>(dest);
+	for (int i = 0; i < len; ++i)
+	{
+		if (*src_bytes)
+			*dest_shorts = translator[remapper[*src_bytes]];
+
+		++dest_shorts;
+		++src_bytes;
+	}
 }
 
 
 inline void BlitPlainXlat<unsigned short>::BlitForward(void * dest, void const * source, int len) const
 {
+	// original asm
+#if 0
 	unsigned short const * remapper = TranslateTable;
 	__asm {
 		mov	ebx,[remapper]
@@ -604,6 +667,17 @@ again:
 		mov	[edi],ax
 		dec	ecx
 		jnz	again
+	}
+#endif
+
+	// Run bytes through the translation table and copy to dest
+	const unsigned char* src_bytes = static_cast<const unsigned char*>(source);
+	unsigned short* dest_shorts = static_cast<unsigned short*>(dest);
+	for (int i = 0; i < len; ++i)
+	{
+		*dest_shorts = TranslateTable[*src_bytes];
+		++src_bytes;
+		++dest_shorts;
 	}
 }
 

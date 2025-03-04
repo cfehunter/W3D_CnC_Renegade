@@ -58,14 +58,15 @@
 #define VECTOR_H
 
 #include "always.h"
-#include	<assert.h>
-#include	<stdlib.h>
+#include <assert.h>
+#include <stdlib.h>
 #include <string.h>
 #include <new.h>
 
 #ifdef _MSC_VER
 #pragma warning (disable : 4702) // unreachable code, happens with some uses of these templates
 #endif
+#include <matrix4.h>
 
 class	NoInitClass;
 
@@ -88,13 +89,13 @@ template<class T>
 class VectorClass
 {
 	public:
-		WWINLINE VectorClass(NoInitClass const &) {};
+		VectorClass(NoInitClass const &) {};
 		VectorClass(int size=0, T const * array=0);
 		VectorClass(VectorClass<T> const &);		// Copy constructor.
 		virtual ~VectorClass(void);
 
-		WWINLINE T & operator[](int index) {  assert(unsigned(index) < unsigned(VectorMax));return(Vector[index]); } 
-		WWINLINE T const & operator[](int index) const { assert(unsigned(index) < unsigned(VectorMax));return(Vector[index]);  }
+		T & operator[](int index) {  assert(unsigned(index) < unsigned(VectorMax));return(Vector[index]); } 
+		T const & operator[](int index) const { assert(unsigned(index) < unsigned(VectorMax));return(Vector[index]);  }
 	
 		VectorClass<T> & operator = (VectorClass<T> const &); // Assignment operator.
 
@@ -102,7 +103,7 @@ class VectorClass
 
 		virtual bool Resize(int newsize, T const * array=0);
 		virtual void Clear(void);
-		WWINLINE int Length(void) const {return VectorMax;};
+		int Length() const {return VectorMax;}
 		virtual int ID(T const * ptr);	// Pointer based identification.
 		virtual int ID(T const & ptr);	// Value based identification.
 
@@ -312,12 +313,13 @@ bool VectorClass<T>::operator == (VectorClass<T> const & vector) const
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   03/13/1995 JLB : Created.                                                                 *
+ *   03/04/2025 CFE : Use size_t for pointer math                                              *
  *=============================================================================================*/
 template<class T>
 inline int VectorClass<T>::ID(T const * ptr)
 {
 	if (!IsValid) return(0);
-	return(((unsigned long)ptr - (unsigned long)&(*this)[0]) / sizeof(T));
+	return (int)(((size_t)ptr - (size_t)&(*this)[0]) / sizeof(T));
 }
 
 
@@ -487,6 +489,12 @@ template<class T>
 class DynamicVectorClass : public VectorClass<T>
 {
 	public:
+		//#CFE_TODO Identify why this is necessary and remove
+		// Bring these explicitly into scope, as another symbol in scope seems to be shadowing them and causing strange build errors.
+		using VectorClass<T>::VectorMax;
+		using VectorClass<T>::Length;
+		using VectorClass<T>::IsAllocated;
+
 		DynamicVectorClass(unsigned size=0, T const * array=0);
 
 		// Stubbed equality operators so you can have dynamic vectors of dynamic vectors
@@ -615,9 +623,9 @@ bool DynamicVectorClass<T>::Resize(int newsize, T const * array)
 {
 	if (VectorClass<T>::Resize(newsize, array)) {
 		if (Length() < ActiveCount) ActiveCount = Length();
-		return(true);
+		return true;
 	}
-	return(false);
+	return false;
 }
 
 

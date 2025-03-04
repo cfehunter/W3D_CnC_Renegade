@@ -207,9 +207,14 @@ void SaveLoadSystemClass::Register_Post_Load_Callback(PostLoadableClass * obj)
 	}
 }
 
-void SaveLoadSystemClass::Register_Pointer (void *old_pointer, void *new_pointer)
+void SaveLoadSystemClass::Register_Pointer(uint32 old_pointer_to_convert, void *new_pointer)
 {
-	PointerRemapper.Register_Pointer(old_pointer,new_pointer);
+	PointerRemapper.Register_Pointer(old_pointer_to_convert, new_pointer);
+}
+
+uint32 SaveLoadSystemClass::Convert_Pointer(void* pointer)
+{
+	return PointerRemapper.Convert_Pointer(pointer);
 }
 
 #ifdef WWDEBUG
@@ -226,14 +231,14 @@ void SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap (RefCountClass **poi
 
 #else
 
-void SaveLoadSystemClass::Request_Pointer_Remap (void **pointer_to_convert)
+void SaveLoadSystemClass::Request_Pointer_Remap (uint32 old_pointer, void **pointer_to_convert)
 {
-	PointerRemapper.Request_Pointer_Remap(pointer_to_convert);
+	PointerRemapper.Request_Pointer_Remap(old_pointer, pointer_to_convert);
 }
 
-void SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap (RefCountClass **pointer_to_convert)
+void SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap(uint32 old_pointer, RefCountClass **pointer_to_convert)
 {
-	PointerRemapper.Request_Ref_Counted_Pointer_Remap(pointer_to_convert);
+	PointerRemapper.Request_Ref_Counted_Pointer_Remap(old_pointer, pointer_to_convert);
 }
 
 #endif

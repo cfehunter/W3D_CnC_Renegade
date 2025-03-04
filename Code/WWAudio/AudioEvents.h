@@ -201,11 +201,12 @@ AudioCallbackListClass<T>::Add_Callback (T pointer, uint32 user_data)
 template <class T> T
 AudioCallbackListClass<T>::Get_Callback (int index, uint32 *user_data)
 {
+	//#CFE_TODO Find out why Vector is colliding
 	if (user_data != NULL) {
-		(*user_data) = Vector[index].user_data;
+		(*user_data) = this->Vector[index].user_data;
 	}
 
-	return Vector[index].callback_ptr;
+	return this->Vector[index].callback_ptr;
 }
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -214,9 +215,10 @@ AudioCallbackListClass<T>::Get_Callback (int index, uint32 *user_data)
 template <class T> void
 AudioCallbackListClass<T>::Remove_Callback (T pointer)
 {
-	for (int index = 0; index < ActiveCount; index ++) {
-		if (Vector[index].callback_ptr == pointer) {
-			Delete (index);
+	//#CFE_TODO Find out why names are colliding
+	for (int index = 0; index < this->ActiveCount; index ++) {
+		if (this->Vector[index].callback_ptr == pointer) {
+			this->Delete (index);
 			break;
 		}
 	}

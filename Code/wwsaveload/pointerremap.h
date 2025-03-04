@@ -48,10 +48,12 @@
 #endif
 
 #include "always.h"
+#include "bittype.h"
 #include "vector.h"
 
-class RefCountClass;
+#include <unordered_map>
 
+class RefCountClass;
 
 class PointerRemapClass 
 {
@@ -63,36 +65,40 @@ class PointerRemapClass
 		void		Reset(void);
 		void		Process(void);
 
-		void		Register_Pointer (void *old_pointer, void *new_pointer);
+		void		Register_Pointer (uint32 old_pointer_to_convert, void *new_pointer);
 
 #ifdef WWDEBUG
-		void		Request_Pointer_Remap (void **pointer_to_convert,const char * file,int line);
-		void		Request_Ref_Counted_Pointer_Remap (RefCountClass **pointer_to_convert,const char * file, int line);
+		void		Request_Pointer_Remap (uint32 old_pointer_to_convert, void **pointer_to_convert,const char * file,int line);
+		void		Request_Ref_Counted_Pointer_Remap (uint32 old_pointer_to_convert, RefCountClass **pointer_to_convert,const char * file, int line);
 #else
-		void		Request_Pointer_Remap (void **pointer_to_convert);
-		void		Request_Ref_Counted_Pointer_Remap (RefCountClass **pointer_to_convert);
+		void		Request_Pointer_Remap (uint32 old_pointer_to_convert, void **pointer_to_convert);
+		void		Request_Ref_Counted_Pointer_Remap (uint32 old_pointer_to_convert, RefCountClass **pointer_to_convert);
 #endif
 
+		// Convert a pointer to an ID. Will return an existing ID if this pointer has been seen before
+		uint32 Convert_Pointer(void* pointer);
 	private:
 
 		struct PtrPairStruct
 		{
 			PtrPairStruct(void) {}
-			PtrPairStruct(void * oldptr,void * newptr) : OldPointer(oldptr),NewPointer(newptr) {}
-			bool operator == (const PtrPairStruct & that) { return ((OldPointer == that.OldPointer) && (NewPointer == that.NewPointer)); } 
-			bool operator != (const PtrPairStruct & that) { return !(*this == that); } 
+			PtrPairStruct(uint32 oldptr,void * newptr) : OldPointer(oldptr),NewPointer(newptr) {}
+			bool operator == (const PtrPairStruct & that) const { return ((OldPointer == that.OldPointer) && (NewPointer == that.NewPointer)); } 
+			bool operator != (const PtrPairStruct & that) const { return !(*this == that); } 
 			
-			void *		OldPointer;
+			uint32		OldPointer;
 			void *		NewPointer;
 		};
 		
 		struct PtrRemapStruct
 		{
 			PtrRemapStruct(void) {}
-			bool operator == (const PtrRemapStruct & that) { return (PointerToRemap == that.PointerToRemap); } 
-			bool operator != (const PtrRemapStruct & that) { return !(*this == that); } 
+			PtrRemapStruct(uint32 oldptr, void** pointerToRemap) : OldPointer(oldptr), PointerToRemap(pointerToRemap) {}
+			bool operator == (const PtrRemapStruct & that) const { return OldPointer == that.OldPointer && PointerToRemap == that.PointerToRemap; }
+			bool operator != (const PtrRemapStruct & that) const { return !(*this == that); } 
 			
-			void **			PointerToRemap;
+			uint32 OldPointer;
+			void** PointerToRemap;
 #ifdef WWDEBUG
 			const char *	File;
 			int				Line;
@@ -100,15 +106,15 @@ class PointerRemapClass
 		};
 
 		void		Process_Request_Table(DynamicVectorClass<PtrRemapStruct> & request_table,bool refcount);
-		static int __cdecl ptr_pair_compare_function(void const * ptr1, void const * ptr2);
-		static int __cdecl ptr_request_compare_function(void const * ptr1, void const * ptr2);
 
 		/*
 		**	Array of pointers associated with ID values to assist in swizzling.
 		*/
-		DynamicVectorClass<PtrPairStruct>	PointerPairTable;
-		DynamicVectorClass<PtrRemapStruct>	PointerRequestTable;
-		DynamicVectorClass<PtrRemapStruct>	RefCountRequestTable;
+		std::unordered_map<uint32, void*> IDToPointerMapping;
+		std::unordered_map<void*, uint32> PointerToIDMapping;
+		DynamicVectorClass<PtrRemapStruct> PointerRequestTable;
+		DynamicVectorClass<PtrRemapStruct> RefCountRequestTable;
+		uint32 NextPointerID = 0;
 };
 
 

@@ -606,6 +606,11 @@ class GenericDataSafeClass
 		*/
 		static inline int Get_Type_Size(int type);
 
+		/*
+		* Allocate a new (sequential) type code
+		*/
+		static unsigned long Alloc_Type_Code();
+
 #ifdef THREAD_SAFE_DATA_SAFE
 		/*
 		** Thread safety.
@@ -1367,37 +1372,16 @@ DataSafeClass<T>::~DataSafeClass(void)
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   7/2/2001 11:17AM ST : Created                                                             *
+ *   6/3/2025 CFE      : Reworked to use a different ID mechanism.                             *
+ *  Note that because this is a static lib, and a template function, this ID is *not* going to *
+ *  be the same for a type between modules. This was true of the original implementation too.  *
  *=============================================================================================*/
 template <class T>
 unsigned long DataSafeClass<T>::Get_Type_Code(void)
 {
-	/*
-	** Make sure this function gets expanded multiple times for different types by referencing the type.
-	*/
-	volatile int data_size = sizeof(T);
-	data_size = data_size;
-
-	/*
-	** Since we aren't using RTTI I need some other way of distinguishing types in the safe. Because it's templatised, this
-	** code will get expanded once for each type it's used with. I will use the location in memory of the function to
-	** uniquely identify each type. What a cunning plan.
-	*/
-	static unsigned long instruction_pointer;
-	instruction_pointer = 0;
-	__asm {
-here:
-		lea	eax,here
-		mov	[instruction_pointer],eax
-	};
-
-	ds_assert(instruction_pointer != 0);
-
-	return(instruction_pointer);
+	static const unsigned long id = Alloc_Type_Code();
+	return id;
 }
-
-
-
-
 
 /***********************************************************************************************
  * DataSafeClass::Get_Type_ID -- Get the id for the given type and size                        *

@@ -164,14 +164,19 @@ public:
 	** Pointer Remapping interface.  NOTE: use the macros defined below to 
 	** get debug info with your pointers when doing a debug build.
 	*/
-	static void		Register_Pointer (void *old_pointer, void *new_pointer);
+	static void		Register_Pointer (uint32 old_pointer, void *new_pointer);
+
+	/*
+	** Convert a pointer to an ID. Will return an existing ID if this pointer has been seen before
+	*/ 
+	static uint32	Convert_Pointer(void* pointer);
 
 #ifdef WWDEBUG
-	static void		Request_Pointer_Remap (void **pointer_to_convert,const char * file = NULL,int line = 0);
-	static void		Request_Ref_Counted_Pointer_Remap (RefCountClass **pointer_to_convert,const char * file = NULL,int line = 0);
+	static void		Request_Pointer_Remap (uint32 old_pointer_to_convert, void **pointer_to_convert,const char * file = NULL,int line = 0);
+	static void		Request_Ref_Counted_Pointer_Remap (uint32 old_pointer_to_convert, RefCountClass **pointer_to_convert,const char * file = NULL,int line = 0);
 #else
-	static void		Request_Pointer_Remap (void **pointer_to_convert);
-	static void		Request_Ref_Counted_Pointer_Remap (RefCountClass **pointer_to_convert);
+	static void		Request_Pointer_Remap(uint32 old_pointer_to_convert, void** pointer_to_convert);
+	static void		Request_Ref_Counted_Pointer_Remap (uint32 old_pointer_to_convert, RefCountClass **pointer_to_convert);
 #endif
 
 protected:
@@ -210,12 +215,13 @@ protected:
 ** Use the following macros to automatically enable pointer-remap DEBUG code.  Remember that 
 ** in all cases you submit a pointer to the pointer you want re-mapped.
 */
+//#CFE_TODO: Consider adding the old pointer as a parameter to the macro. Will require a lot of fixup though.
 #ifdef WWDEBUG
-#define REQUEST_POINTER_REMAP(pp)					SaveLoadSystemClass::Request_Pointer_Remap(pp,__FILE__,__LINE__)
-#define REQUEST_REF_COUNTED_POINTER_REMAP(pp)	SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap(pp,__FILE__,__LINE__)
+#define REQUEST_POINTER_REMAP(pp)					SaveLoadSystemClass::Request_Pointer_Remap(reinterpret_cast<uint32>(*pp), pp,__FILE__,__LINE__)
+#define REQUEST_REF_COUNTED_POINTER_REMAP(pp)	SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap(reinterpret_cast<uint32>(*pp), pp,__FILE__,__LINE__)
 #else
-#define REQUEST_POINTER_REMAP(pp)					SaveLoadSystemClass::Request_Pointer_Remap(pp)
-#define REQUEST_REF_COUNTED_POINTER_REMAP(pp)	SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap(pp)
+#define REQUEST_POINTER_REMAP(pp)					SaveLoadSystemClass::Request_Pointer_Remap(reinterpret_cast<uint32>(*pp), pp)
+#define REQUEST_REF_COUNTED_POINTER_REMAP(pp)	SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap(reinterpret_cast<uint32>(*pp), pp)
 #endif
 
 
