@@ -372,7 +372,7 @@ public:
 	unsigned Get_Total_Allocation_Count();
 	unsigned Get_Total_Actual_Memory_Usage() { return ActualMemoryUsage; }
 
-	static FastAllocatorGeneral* Get_Allocator();
+	static FastAllocatorGeneral& Get_Allocator();
 
 protected:
    FastFixedAllocator allocators[MAX_ALLOC_SIZE/ALLOC_STEP];
@@ -529,71 +529,40 @@ WWINLINE void* FastAllocatorGeneral::Realloc(void* pAlloc, unsigned int n){
 // system whereby it maintains buckets for integral sizes.
 //
 
-#ifdef _MSC_VER 
-   //VC++ continues to be the one compiler that lacks the ability to compile
-   //standard C++. So we define a version of the STL allocator specifically
-   //for VC++, and let other compilers use a standard allocator template.
-   template <class T>
-   struct FastSTLAllocator{
-      typedef size_t    size_type;        //basically, "unsigned int"
-      typedef ptrdiff_t difference_type;  //basically, "int"
-      typedef T*        pointer;
-      typedef const T*  const_pointer;
-      typedef T&        reference;
-      typedef const T&  const_reference;
-      typedef T         value_type;
 
-      T*            address(T& t)       const             { return (&t); } //These two are slightly strange but 
-      const  T*     address(const T& t) const             { return (&t); } //required functions. Just do it.
-      static T*     allocate(size_t n, const void* =NULL) { return (T*)generalAllocator.Alloc(n*sizeof(T)); }
-      static void   construct(T* ptr, const T& value)     { new(ptr) T(value); }
-      static void   deallocate(void* ptr, size_t /*n*/)   { generalAllocator.Free(ptr); }
-      static void   destroy(T* ptr)                       { ptr->~T(); }
-      static size_t max_size()                            { return (size_t)-1; }
+//This is a C++ language standard allocator. Most C++ compilers after 1999 
+//other than Microsoft C++ compile this fine. Otherwise. you might be able
+//to use the same allocator as VC++ uses above.
+template <class T>
+class FastSTLAllocator
+{
+public:
+    typedef size_t     size_type;
+    typedef ptrdiff_t  difference_type;
+    typedef T*         pointer;
+    typedef const T*   const_pointer;
+    typedef T&         reference;
+    typedef const T&   const_reference;
+    typedef T          value_type;
 
-      //This _Charalloc is required by VC++5 since it VC++5 predates
-      //the language standardization. Allocator behaviour is one of the
-      //last things to have been hammered out. Important note: If you 
-      //decide to write your own fast allocator, containers will allocate
-      //random objects through this function but delete them through 
-      //the above delallocate() function. So your version of deallocate
-      //should *not* assume that it will only be given T objects to delete.
-      char* _Charalloc(size_t n){ return (char*)::generalAllocator.Alloc(n*sizeof(char)); }
-   };
-#else
-   //This is a C++ language standard allocator. Most C++ compilers after 1999 
-   //other than Microsoft C++ compile this fine. Otherwise. you might be able
-   //to use the same allocator as VC++ uses above.
-   template <class T>
-   class FastSTLAllocator{
-   public:
-     typedef size_t     size_type;
-     typedef ptrdiff_t  difference_type;
-     typedef T*         pointer;
-     typedef const T*   const_pointer;
-     typedef T&         reference;
-     typedef const T&   const_reference;
-     typedef T          value_type;
+    template <class T1> struct rebind {
+    typedef FastSTLAllocator<T1> other;
+    };
 
-     template <class T1> struct rebind {
-        typedef FastSTLAllocator<T1> other;
-     };
+    FastSTLAllocator() {}
+    FastSTLAllocator(const FastSTLAllocator&) {}
+    template <class T1> FastSTLAllocator(const FastSTLAllocator<T1>&) {}
+    ~FastSTLAllocator() {}
 
-     FastSTLAllocator() {}
-     FastSTLAllocator(const FastSTLAllocator&) {}
-     template <class T1> FastSTLAllocator(const FastSTLAllocator<T1>&) {}
-     ~FastSTLAllocator() {}
+    pointer address(reference x) const             { return &x; }
+    const_pointer address(const_reference x) const { return &x; }
 
-     pointer address(reference x) const             { return &x; }
-     const_pointer address(const_reference x) const { return &x; }
-
-     T* allocate(size_type n, const void* = NULL) { return n != 0 ? static_cast<T*>(generalAllocator.Alloc(n*sizeof(T))) : NULL; }
-     void deallocate(pointer p, size_type n)      { generalAllocator.Free(p); }
-     size_type max_size() const                   { return size_t(-1) / sizeof(T); }
-     void construct(pointer p, const T& val)      { new(p) T(val); }
-     void destroy(pointer p)                      { p->~T(); }
-   };
-#endif
+    T* allocate(size_type n, const void* = NULL) { return n != 0 ? static_cast<T*>(FastAllocatorGeneral::Get_Allocator().Alloc(n*sizeof(T))) : NULL; }
+    void deallocate(pointer p, size_type n)      { FastAllocatorGeneral::Get_Allocator().Free(p); }
+    size_type max_size() const                   { return size_t(-1) / sizeof(T); }
+    void construct(pointer p, const T& val)      { new(p) T(val); }
+    void destroy(pointer p)                      { p->~T(); }
+};
 
 template<class T>
 WWINLINE bool operator==(const FastSTLAllocator<T>&, const FastSTLAllocator<T>&) { return true;  }

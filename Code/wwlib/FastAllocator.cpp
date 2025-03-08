@@ -18,16 +18,19 @@
 
 #include "FastAllocator.h"
 
-static FastAllocatorGeneral* generalAllocator; //This general allocator will do all allocations for us.
-
-FastAllocatorGeneral* FastAllocatorGeneral::Get_Allocator()
+FastAllocatorGeneral& FastAllocatorGeneral::Get_Allocator()
 {
-	if (!generalAllocator) {
+	//This general allocator will do all allocations for us.
+	static FastAllocatorGeneral* generalAllocator = nullptr;
+
+	if (!generalAllocator)
+	{
+		// CFE_NOTE: I'm assuming they're using malloc here to avoid hitting a global override of new
 		generalAllocator=reinterpret_cast<FastAllocatorGeneral*>(::malloc(sizeof(FastAllocatorGeneral)));
 
 		new (generalAllocator) FastAllocatorGeneral();
 	}
-	return generalAllocator;
+	return *generalAllocator;
 }
 
 FastAllocatorGeneral::FastAllocatorGeneral() : MemoryLeakLogEnabled(false), AllocatedWithMalloc(0), AllocatedWithMallocCount(0), ActualMemoryUsage(0)
