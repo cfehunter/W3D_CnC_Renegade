@@ -23,7 +23,6 @@
 #include "vertmaterial.h"
 #include "texture.h"
 #include "d3d8.h"
-#include "D3dx8math.h"
 #include "statistics.h"
 #include <wwprofile.h>
 

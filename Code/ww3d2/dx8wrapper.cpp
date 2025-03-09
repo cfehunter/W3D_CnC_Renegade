@@ -66,7 +66,7 @@
 #include "missingtexture.h"
 #include "thread.h"
 #include <stdio.h>
-#include <D3dx8core.h>
+//#include <D3dx8core.h>
 #include "pot.h"
 #include "wwprofile.h"
 #include "ffactory.h"
@@ -166,7 +166,6 @@ typedef IDirect3D8* (WINAPI *Direct3DCreate8Type) (UINT SDKVersion);
 Direct3DCreate8Type	Direct3DCreate8Ptr = NULL;
 HINSTANCE D3D8Lib = NULL;
 
-
 /***********************************************************************************
 **
 ** DX8Wrapper Implementation
@@ -177,7 +176,7 @@ void Log_DX8_ErrorCode(unsigned res)
 {
 	char tmp[256]="";
 
-	HRESULT new_res=D3DXGetErrorStringA(
+	HRESULT new_res= D3DXGetErrorStringA(
 		res,
 		tmp,
 		sizeof(tmp));
@@ -1966,12 +1965,12 @@ void DX8Wrapper::Apply_Render_State_Changes()
 	unsigned mask=TEXTURE0_CHANGED;
 	for (unsigned i=0;i<MAX_TEXTURE_STAGES;++i,mask<<=1) {
 		if (render_state_changed&mask) {
-			SNAPSHOT_SAY(("DX8 - apply texture %d (%s)\n",i,render_state.Textures[i] ? render_state.Textures[i]->Get_Full_Path() : "NULL"));
+			SNAPSHOT_SAY(("DX8 - apply texture %d (%s)\n",i,render_state.Textures[i] ? (const char*)render_state.Textures[i]->Get_Full_Path() : "NULL"));
 			if (render_state.Textures[i]) render_state.Textures[i]->Apply(i);
 			else TextureClass::Apply_Null(i);
 		}
 		else {
-			SNAPSHOT_SAY(("DX8 - texture %d not changed (%s)\n",i,render_state.Textures[i] ? render_state.Textures[i]->Get_Full_Path() : "NULL"));
+			SNAPSHOT_SAY(("DX8 - texture %d not changed (%s)\n",i,render_state.Textures[i] ? (const char*)render_state.Textures[i]->Get_Full_Path() : "NULL"));
 		}
 	}
 

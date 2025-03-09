@@ -161,6 +161,10 @@ template<class T>
 class LERPAnimationChannelClass : public PrimitiveAnimationChannelClass<T>
 {
 public:
+	//#CFE_TODO: Identify why these names aren't forwarding to the child class properly
+	using PrimitiveAnimationChannelClass<T>::m_Data;
+	using PrimitiveAnimationChannelClass<T>::m_LastIndex;
+	using PrimitiveAnimationChannelClass<T>::KeyClass;
 
 	/////////////////////////////////////////////////////////
 	//	Public methods

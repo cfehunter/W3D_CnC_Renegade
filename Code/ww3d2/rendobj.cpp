@@ -1171,7 +1171,7 @@ uint32 RenderObjPersistFactoryClass::Chunk_ID(void) const
 
 PersistClass *	RenderObjPersistFactoryClass::Load(ChunkLoadClass & cload) const
 {
-	RenderObjClass * old_obj = NULL;
+	uint32 old_obj = 0;
 	RenderObjClass * new_obj = NULL;
 	Matrix3D tm(1);
 	char name[64];

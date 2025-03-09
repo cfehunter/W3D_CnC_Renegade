@@ -1427,7 +1427,7 @@ uint32 DazzlePersistFactoryClass::Chunk_ID(void) const
 
 PersistClass *	DazzlePersistFactoryClass::Load(ChunkLoadClass & cload) const
 {
-	DazzleRenderObjClass * old_obj = NULL;
+	uint32 old_obj = 0;
 	Matrix3D tm(1);
 	char dazzle_type[256];
 	dazzle_type[0] = 0;

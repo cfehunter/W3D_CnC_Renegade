@@ -89,7 +89,7 @@ class VectorClass
 
 		virtual bool operator == (VectorClass<T> const &) const;	// Equality operator.
 
-		virtual bool Resize(int newsize, T const * array=0);
+		virtual bool Resize(int newsize, T const * array = nullptr);
 		virtual void Clear(void);
 		int Length() const {return VectorMax;}
 		virtual int ID(T const * ptr);	// Pointer based identification.

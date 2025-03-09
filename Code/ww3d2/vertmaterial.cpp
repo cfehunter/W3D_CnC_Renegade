@@ -666,7 +666,7 @@ WW3DErrorType VertexMaterialClass::Load_W3D(ChunkLoadClass & cload)
 
 		case W3DVERTMAT_STAGE0_MAPPING_BUMPENV:
 		{
-			BumpEnvTextureMapperClass *mapper =
+			BumpEnvTextureMapperClass* mapper =
 				NEW_REF(BumpEnvTextureMapperClass,(mapping0_arg_ini, "Args", 0));
 			Set_Mapper(mapper,0);
 			mapper->Release_Ref();

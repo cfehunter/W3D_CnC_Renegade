@@ -753,7 +753,7 @@ ActiveConversationClass::Load (ChunkLoadClass &cload)
 void
 ActiveConversationClass::Load_Variables (ChunkLoadClass &cload)
 {
-	ActiveConversationClass *old_ptr = NULL;
+	uint32 old_ptr = 0;
 	int conversation_id = 0;
 
 	//
@@ -790,7 +790,7 @@ ActiveConversationClass::Load_Variables (ChunkLoadClass &cload)
 	//
 	//	Register our old pointer so other objects can safely remap to it
 	//
-	WWASSERT (old_ptr != NULL);
+	WWASSERT (old_ptr != 0);
 	SaveLoadSystemClass::Register_Pointer (old_ptr, this);
 	return ;
 }
