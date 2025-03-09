@@ -36,8 +36,9 @@
  *   LCW_Uncomp -- Decompress an LCW encoded data block.                                       *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"always.h"
-#include	"lcw.h"
+#include "always.h"
+#include "bittype.h"
+#include "lcw.h"
 
 /***************************************************************************
  * LCW_Uncomp -- Decompress an LCW encoded data block.                     *
@@ -71,42 +72,56 @@
  *                                                                         *
  * HISTORY:                                                                *
  *    03/20/1995 IML : Created.                                            *
+ *    03/09/2025 CFE : Fixed up types. Support for files bigger than 65k.  *
  *=========================================================================*/
 int LCW_Uncomp(void const * source, void * dest, unsigned long )
 {
-	unsigned char * source_ptr, * dest_ptr, * copy_ptr;
-	unsigned char op_code, data;
+	uint8 * source_ptr, * dest_ptr, * copy_ptr;
+	uint8 op_code, data;
 	unsigned count;
 	unsigned * word_dest_ptr;
 	unsigned word_data;
 
 	/* Copy the source and destination ptrs. */
-	source_ptr = (unsigned char*) source;
-	dest_ptr   = (unsigned char*) dest;
+	source_ptr = (uint8*) source;
+	dest_ptr   = (uint8*) dest;
 
-	for (;;) {
+	// A first byte of 0x00 identifies that offsets in this file are always relative
+	// In non-relative files this should always be 0x81 for the first byte span.
+	const bool is_relative = *source_ptr == 0;
+	if (is_relative)
+		++source_ptr;
+
+	for (;;)
+	{
 
 		/* Read in the operation code. */
 		op_code = *source_ptr++;
 
-		if (!(op_code & 0x80)) {
+		if (!(op_code & 0x80))
+		{
 
 			/* Do a short copy from destination. */
 			count = (op_code >> 4) + 3;
-			copy_ptr = dest_ptr - ((unsigned) *source_ptr++ + (((unsigned) op_code & 0x0f) << 8));
+			copy_ptr = dest_ptr - ((uintptr_t) *source_ptr++ + (((uintptr_t) op_code & 0x0f) << 8));
 
 			while (count--) *dest_ptr++ = *copy_ptr++;
 
-		} else {
+		}
+		else
+		{
 
-			if (!(op_code & 0x40)) {
-
-				if (op_code == 0x80) {
+			if (!(op_code & 0x40))
+			{
+				if (op_code == 0x80)
+				{
 
 					/* Return # of destination bytes written. */
-					return ((unsigned long) (dest_ptr - (unsigned char*) dest));
+					return (int)(dest_ptr - (uint8*) dest);
 
-				} else {
+				}
+				else
+				{
 
 					/* Do a medium copy from source. */
 					count = op_code & 0x3f;
@@ -114,9 +129,12 @@ int LCW_Uncomp(void const * source, void * dest, unsigned long )
 					while (count--) *dest_ptr++ = *source_ptr++;
 				}
 
-			} else {
+			}
+			else
+			{
 
-				if (op_code == 0xfe) {
+				if (op_code == 0xfe)
+				{
 
 					/* Do a long run. */
 					count = *source_ptr + ((unsigned) *(source_ptr + 1) << 8);
@@ -124,7 +142,7 @@ int LCW_Uncomp(void const * source, void * dest, unsigned long )
 					word_data  = (word_data << 24) + (word_data << 16) + (word_data << 8) + word_data;
 					source_ptr += 3;
 
-					copy_ptr = dest_ptr + 4 - ((unsigned) dest_ptr & 0x3);
+					copy_ptr = dest_ptr + 4 - ((uintptr_t)dest_ptr & 0x3);
 					count -= (copy_ptr - dest_ptr);
 					while (dest_ptr < copy_ptr) *dest_ptr++ = data;
 
@@ -141,22 +159,29 @@ int LCW_Uncomp(void const * source, void * dest, unsigned long )
 					copy_ptr = dest_ptr + (count & 0x3);
 					while (dest_ptr < copy_ptr) *dest_ptr++ = data;
 
-				} else {
+				} 
+				else 
+				{
 
-					if (op_code == 0xff) {
+					if (op_code == 0xff)
+					{
 
 						/* Do a long copy from destination. */
-						count = *source_ptr + ((unsigned) *(source_ptr + 1) << 8);
-						copy_ptr = (unsigned char*) dest + *(source_ptr + 2) + ((unsigned) *(source_ptr + 3) << 8);
+						count = *source_ptr + ((uintptr_t) *(source_ptr + 1) << 8);
+						const uintptr_t offset = *(source_ptr + 2) + ((uintptr_t) * (source_ptr + 3) << 8);
+						copy_ptr = is_relative ? dest_ptr - offset : (uint8*)dest + offset;
 						source_ptr += 4;
 
 						while (count--) *dest_ptr++ = *copy_ptr++;
 
-					} else {
+					}
+					else
+					{
 
 						/* Do a medium copy from destination. */
 						count = (op_code & 0x3f) + 3;
-						copy_ptr = (unsigned char*) dest + *source_ptr + ((unsigned) *(source_ptr + 1) << 8);
+						const uintptr_t offset = (*source_ptr + ((uintptr_t) * (source_ptr + 1) << 8));
+						copy_ptr = is_relative ? dest_ptr - offset : (uint8*)dest + offset;
 						source_ptr += 2;
 
 						while (count--) *dest_ptr++ = *copy_ptr++;
@@ -166,9 +191,6 @@ int LCW_Uncomp(void const * source, void * dest, unsigned long )
 		}
 	}
 }
-
-
-#if defined(_MSC_VER)
 
 
 /*********************************************************************************************** 
@@ -193,10 +215,176 @@ int LCW_Uncomp(void const * source, void * dest, unsigned long )
  *                                                                                             * 
  * HISTORY:                                                                                    * 
  *   05/20/1997 JLB : Created.                                                                 * 
+ *   03/08/2025 CFE : Ported ASM code to C++ and fixed issues with large stream sizes.         * 
  *=============================================================================================*/
-/*ARGSUSED*/
 int LCW_Comp(void const * source, void * dest, int datasize)
 {
+	if (!source || !dest || datasize <= 0)
+		return 0;
+
+	const uint8* source_read = static_cast<const uint8*>(source);
+	const uint8* const source_start = source_read;
+	const uint8* const source_end = source_start + datasize;
+
+	uint8* const dest_start = static_cast<uint8*>(dest);
+	uint8* dest_write = static_cast<uint8*>(dest);
+
+	// Write a zero byte to the start of the stream if this file is to use relative offsets
+	// We do this conditionally so decompressors without this data size modification can still work with smaller files.
+	const bool is_relative = datasize >= UINT16_MAX;
+	if (is_relative)
+		*dest_write++ = 0x00;
+
+	// We always start in a run length
+	// Write the starting data bytes as length 1 and read/write the first byte of source data
+	uint8* command_ptr = dest_write;
+	*dest_write++ = 0x81;
+	*dest_write++ = *source_read++;
+
+	while (source_read < source_end)
+	{
+		// Number of bytes remaining to be processed in the source stream
+		const size_t remaining_source_bytes = source_end - source_read;
+
+		// Consider 4-byte RLE if at least 64-bytes are present and the last byte is the same value
+		if (remaining_source_bytes > 64 && *source_read == *(source_read + 64))
+		{
+			// Run length is 16-bit, so the length can only be a max of uint16 max (stosw asm instruction)
+			const uint8* rle_max = min(source_end, source_read + UINT16_MAX);
+
+			// Scan the source bytes to find the length of the run
+			const uint8* rle_end = source_read + 1;
+			for (; rle_end < rle_max && *rle_end == *source_read; ++rle_end);
+
+			const uint16 run_length = rle_end - source_read;
+
+			// Write the run if it's long enough. Which is 65 bytes according to Westwood
+			if (run_length >= 65)
+			{
+				// We can't add to the short run anymore without corrupting data. Null the pointer.
+				command_ptr = nullptr;
+
+				// Write the RLE command code, run length (16-bit) and the data byte
+				*dest_write++ = 0xFE;
+				*dest_write++ = run_length;
+				*dest_write++ = run_length >> 8;
+				*dest_write++ = *source_read;
+				source_read = rle_end;
+				continue;
+			}
+		}
+
+		// Scan the source data for pattern matches to the current read head
+		// Find the best matching run
+		size_t block_length = 0;
+		const uint8* offset_start = (source_read - source_start) < UINT16_MAX ? source_start : source_read - UINT16_MAX;
+		const uint8* block_start = source_read;
+
+		for (const uint8* search_head = offset_start; search_head < source_read; ++search_head)
+		{
+			// Scan forward until we find the current source byte value
+			for (; *search_head != *source_read; ++search_head);
+
+			// Break out if we hit the end of the search space
+			if (search_head >= source_read)
+				break;
+
+			// Calculate how long the run is
+			size_t match_run = 1;
+			for (match_run = 1; match_run < remaining_source_bytes && source_read[match_run] == search_head[match_run]; ++match_run);
+
+			// If this is better than our best existing run, stash the offset and size
+			if (match_run >= block_length)
+			{
+				block_length = match_run;
+				block_start = search_head;
+			}
+		}
+
+		// Encode the block
+
+		// Offset *will* fit into 16-bit as we put a bound on the search space earlier
+		const uint16 relative_offset = uint16(source_read - block_start);
+		const uint16 offset = is_relative ? relative_offset : block_start - source_start;
+
+		// For small blocks, attempt to add to an existing 0x80 short copy block
+		// Write a new one if there's no space in the existing one
+		if (block_length <= 2)
+		{
+			// Append if we can
+			if (command_ptr && *command_ptr < 0xBF)
+			{
+				++*command_ptr;
+			}
+			// Write a new block
+			else
+			{
+				command_ptr = dest_write;
+				*dest_write++ = 0x81;
+			}
+
+			// Write the value
+			*dest_write++ = *source_read;
+		}
+		else
+		{
+			// Short run block is now invalid
+			command_ptr = nullptr;
+
+			// Advance the source read head by the block length
+			source_read += block_length;
+
+			// Short copy block if length <= 10 and the offset fits in 12 bits
+			if (block_length <= 10 && relative_offset <= 0x0FFF)
+			{
+				//[Count, High Offset, Low Offset, Low Offset]
+				//NH LL | DD DD DD ...
+
+				// Subtract 3 from length to pack it into 3 bits.
+				// We know blocks of this type are at least 3 length because 1-2 would be in the smaller block
+				// Leftshift it 4 to get it into the high nibble, because the value is 0-7 this leaves the MSB at 0
+				// and it won't be interpreted as an 0x80 command.
+				const uint8 packed_block_length((uint8(block_length) - 3) << 4);
+				*dest_write++ = packed_block_length + (uint8(relative_offset >> 8) & 0x0F);
+				*dest_write++ = uint8(relative_offset);
+			}
+			// Medium run block if length <= 64
+			else if (block_length <= 64)
+			{
+				const uint8 packed_block_length = uint8(block_length) - 3;
+
+				// Store with both high command bits set.
+				// CCNN NNNN
+				*dest_write++ = packed_block_length | 0xC0;
+
+				// Write the offset as a full 16-bit integer [LLHH]
+				*dest_write++ = uint8(offset);
+				*dest_write++ = uint8(offset >> 8);
+			}
+			// Long run block
+			else
+			{
+				// Write the long run command
+				*dest_write++ = 0xFF;
+
+				// Write the count
+				*dest_write++ = uint8(block_length);
+				*dest_write++ = uint8(block_length >> 8);
+
+				// Write the offset as a full 16-bit integer [LLHH]
+				*dest_write++ = uint8(offset);
+				*dest_write++ = uint8(offset >> 8);
+			}
+		}
+	}
+	
+	// Write an empty length to signal the end of the stream;
+	*dest_write++ = 0x80;
+
+	return int(dest_write - dest_start);
+
+	// Original ASM (with extra comments)
+#if 0
 	int retval = 0;
 #ifdef _WINDOWS
 	long inlen = 0;
@@ -258,40 +446,40 @@ searchloop:
 		sub	eax,eax
 		mov	al,[esi]	//; get the current byte of data
 		cmp	al,[esi+64]
-		jne	short notrunlength
+		jne	short notrunlength // If the byte 64 ahead of current read head isn't the same. Skip RLE.
 
 		mov	ebx,edi
 
-		mov	edi,esi
-		mov	ecx,[end_of_data]
+		mov	edi,esi // stash source read head in edi register
+		mov	ecx,[end_of_data] 
 		sub	ecx,edi
 		repe	scasb
 		dec	edi
-		mov	ecx,edi
-		sub	ecx,esi
-		cmp	ecx,65
-		jb	short notlongenough
+		mov	ecx,edi // copy read head into ecx
+		sub	ecx,esi // calculate how many bytes were scanned by "repe scasb"
+		cmp	ecx,65 
+		jb	short notlongenough // Do not encode as RLE unless at least 65 bytes of data
 
 		mov	[inlen],0	//; clear the in-length flag
 //		mov	[DWORD PTR inlen],0	//; clear the in-length flag
 		mov	esi,edi
 		mov	edi,[ndest]	//; get the offset of our compressed data
 
-		mov	ah,al
-		mov	al,0FEh
-		stosb
-		xchg	ecx,eax
-		stosw
-		mov	al,ch
-		stosb
+		mov	ah,al // Stash the run byte value into ah
+		mov	al,0FEh // Store the RLE command in al
+		stosb // Write al to edi
+		xchg	ecx,eax // Swap the run length into eax
+		stosw // Write the run length (uint16)
+		mov	al,ch // Copy the byte value (was swapped to ch) back to al
+		stosb // write the byte value of the run
 
 		mov	[ndest],edi	//; save offset of compressed data
-		mov	edi,ebx
-		jmp	searchloop
+		mov	edi,ebx // Restore a1stsrc (pointer to source data start) back to edi
+		jmp	searchloop // Restart the loop
 	}
 notlongenough:
 	__asm {
-		mov	edi,ebx
+		mov	edi,ebx // ensure a1stsrc (address of src data start) is in edi
 	}
 notrunlength:
 oploop:
@@ -438,7 +626,6 @@ outofhere:
 	}
 #endif
 	return(retval);
+#endif // original ASM
 }
-#endif
-
 
