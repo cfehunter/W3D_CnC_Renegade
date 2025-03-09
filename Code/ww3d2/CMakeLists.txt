@@ -230,6 +230,18 @@ target_link_libraries(ww3d2 PRIVATE
 
 target_sources(ww3d2 PRIVATE ${WW3D2_SRC})
 
+# We require the 2010 DirtectX SDK (for now)
+if (DEFINED ENV{DXSDK_DIR})
+    set(DXSDK_DIR_ENV $ENV{DXSDK_DIR})
+else()
+    message(FATAL_ERROR "DXSDK_DIR env variable is not set. Install the 2010 DirectX SDK")
+endif()
+
+target_include_directories(ww3d2
+    PUBLIC
+    "${DXSDK_DIR_ENV}Include"
+)
+
 # This module needs building differently for the level editor
 if (RENEGADE_TOOLS)
     # Targets to build.

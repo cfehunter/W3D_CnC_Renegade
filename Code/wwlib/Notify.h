@@ -37,19 +37,10 @@
 #ifndef __NOTIFY_H__
 #define __NOTIFY_H__
 
-// Reduce warning level for STL
-#if defined(_MSC_VER)
-#pragma warning(push, 3)
-#endif
-
 #include <vector>
 #include <algorithm>
 
-#if defined(_MSC_VER)
-#pragma warning(pop)
-#endif
-
-#include <assert.h>
+#include <cassert>
 
 template<typename Event> class Notifier;
 template<typename Event> class Observer;
@@ -59,27 +50,32 @@ template<typename Event> class Observer
 	public:
 		typedef std::vector< Notifier<Event>* > NotifierColl;
 
-		Observer() :
-				mNotifiers(NULL)
-			{}
+		Observer()
+			: mNotifiers(nullptr)
+		{}
 
 		virtual ~Observer()
-			{StopObserving();}
+		{
+		 StopObserving();
+		}
+
+		// Non-copyable
+		Observer(const Observer<Event>& observer) = delete;
+		const Observer<Event>& operator=(const Observer<Event>&) = delete;
 
 		//! Handle event notification
 		virtual void HandleNotification(Event&) = 0;
 
 		//! Notifier has ended notification of this event
 		virtual void NotificationEnded(const Notifier<Event>& notifier)
-			{
-			NotifierColl::iterator pos = std::find(mNotifiers.begin(),
-				mNotifiers.end(), &notifier);
+		{
+			auto pos = std::find(mNotifiers.begin(), mNotifiers.end(), &notifier);
 
 			if (pos != mNotifiers.end())
-				{
+			{
 				mNotifiers.erase(pos);
-				}
 			}
+		}
 
 		//! Request notification of this event
 		virtual void NotifyMe(Notifier<Event>& notifier)
@@ -87,19 +83,14 @@ template<typename Event> class Observer
 
 		//! Stop observing event
 		void StopObserving()
-			{
+		{
 			while (mNotifiers.size() > 0)
-				{
+			{
 				Notifier<Event>* notifier = mNotifiers.back();
 				assert(notifier && "ERROR: NULL pointer in collection.");
 				notifier->RemoveObserver(*this);
-				}
 			}
-
-	protected:
-		Observer(const Observer<Event>& observer);
-		const Observer<Event>& operator=(const Observer<Event>&);
-
+		}
 	private:
 		friend class Notifier<Event>;
 		NotifierColl mNotifiers;
@@ -114,56 +105,54 @@ template<typename Event> class Observer
 template<typename Event> class Notifier
 	{
 	public:
-		typedef std::vector< Observer<Event>* > ObserverColl;
+		typedef std::vector<Observer<Event>*> ObserverColl;
 
 		Notifier()
-			{}
+		{}
 
 		virtual ~Notifier()
+		{
+			for (size_t index = mObservers.size(); index--;)
 			{
-			for (int index = mObservers.size(); index--;)
-				{
 				mObservers[index]->NotificationEnded(*this);
-				}
 			}
+		}
 
 		//! Send event notification to all observers of this event.
 		virtual void NotifyObservers(Event& event)
+		{
+			for (size_t index = 0; index < mObservers.size(); ++index)
 			{
-			for (unsigned int index = 0; index < mObservers.size(); index++)
-				{
 				mObservers[index]->HandleNotification(event);
-				}
 			}
+		}
 
 		//! Add an observer of this event
 		virtual void AddObserver(Observer<Event>& observer)
-			{
-			ObserverColl::iterator pos = std::find(mObservers.begin(),
-				mObservers.end(), &observer);
-
+		{
+			auto pos = std::find(mObservers.begin(), mObservers.end(), &observer);
 			if (pos == mObservers.end())
-				{
+			{
 				observer.mNotifiers.push_back(this);
 				mObservers.push_back(&observer);
-				}
 			}
+		}
 
 		//! Remove an observer of this event
 		virtual void RemoveObserver(Observer<Event>& observer)
-			{
-			ObserverColl::iterator pos = std::find(mObservers.begin(),
-				mObservers.end(), &observer);
-
+		{
+			auto pos = std::find(mObservers.begin(), mObservers.end(), &observer);
 			if (pos != mObservers.end())
-				{
+			{
 				observer.NotificationEnded(*this);
 				mObservers.erase(pos);
-				}
 			}
+		}
 
 		virtual bool HasObservers(void) const
-			{return !mObservers.empty();}
+		{
+			return !mObservers.empty();
+		}
 
 	private:
 		//! Observer collection

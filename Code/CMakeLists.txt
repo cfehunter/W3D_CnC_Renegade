@@ -40,6 +40,7 @@ target_link_libraries(wwcommon INTERFACE
     binkstub
     gamespy
     d3d8lib
+    headeronlystubs
 )
 
 # Module static libraries
