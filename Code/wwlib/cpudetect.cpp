@@ -24,6 +24,7 @@
 #pragma warning (disable : 4201)	// Nonstandard extension - nameless struct
 #include <windows.h>
 #include "systimer.h"
+#include <intrin.h>
 
 struct OSInfoStruct {
 	const char* Code;
@@ -146,6 +147,12 @@ const char* CPUDetectClass::Get_Processor_Manufacturer_Name()
 
 static unsigned Calculate_Processor_Speed(__int64& ticks_per_second)
 {
+	// This doesn't make sense on modern systems and asm can't be inlined like this on MSVC x64
+	ticks_per_second = 1;
+	return 0;
+
+	// Original asm
+#if 0
 	struct {
 		unsigned timer0_h;
 		unsigned timer0_l;
@@ -172,6 +179,7 @@ static unsigned Calculate_Processor_Speed(__int64& ticks_per_second)
 	__int64 t=*(__int64*)&Time.timer1_h-*(__int64*)&Time.timer0_h;
 	ticks_per_second=(1000/200)*t;	// Ticks per second
 	return unsigned(t/(elapsed*1000));
+#endif
 }
 
 void CPUDetectClass::Init_Processor_Speed()
@@ -827,6 +835,11 @@ void CPUDetectClass::Init_Processor_String()
 
 void CPUDetectClass::Init_CPUID_Instruction()
 {
+	// x64 always has CPUID instruction
+	HasCPUIDInstruction = true;
+
+	// Original asm
+#if 0
 	unsigned long cpuid_available=0;
 
    // The pushfd/popfd commands are done using emits
@@ -854,6 +867,7 @@ done:
 		pop ebx
 	}
 	HasCPUIDInstruction=!!cpuid_available;
+#endif
 }
 
 void CPUDetectClass::Init_Processor_Features()
@@ -917,6 +931,15 @@ bool CPUDetectClass::CPUID(
 {
 	if (!Has_CPUID_Instruction()) return false;	// Most processors since 486 have CPUID...
 
+	int cpui[4] = {};
+	__cpuid(cpui, 0);
+
+	u_eax_ = cpui[0];
+	u_ebx_ = cpui[1];
+	u_ecx_ = cpui[2];
+	u_edx_ = cpui[3];
+
+#if 0
 	unsigned u_eax;
 	unsigned u_ebx;
 	unsigned u_ecx;
@@ -941,7 +964,7 @@ bool CPUDetectClass::CPUID(
 	u_ebx_=u_ebx;
 	u_ecx_=u_ecx;
 	u_edx_=u_edx;
-
+#endif
 	return true;
 }
 
@@ -1075,7 +1098,7 @@ void CPUDetectClass::Init_Compact_Log()
 static class CPUDetectInitClass
 {
 public:
-	CPUDetectInitClass::CPUDetectInitClass()
+	CPUDetectInitClass()
 	{
 		CPUDetectClass::Init_CPUID_Instruction();
 		// We pretty much need CPUID, but let's not crash if it doesn't exist.

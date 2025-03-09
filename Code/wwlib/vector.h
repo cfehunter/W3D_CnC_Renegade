@@ -50,23 +50,15 @@
  *   DynamicVectorClass<T>::Uninitialized_Add -- Add an empty place to the vector.             *
  *   DynamicVectorClass<T>::Insert -- insert an object at the desired index                    *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#if _MSC_VER >= 1000
 #pragma once
-#endif // _MSC_VER >= 1000
 
 #ifndef VECTOR_H
 #define VECTOR_H
 
 #include "always.h"
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include <new.h>
-
-#ifdef _MSC_VER
-#pragma warning (disable : 4702) // unreachable code, happens with some uses of these templates
-#endif
-#include <matrix4.h>
+#include "matrix4.h"
+#include <cassert>
+#include <new>
 
 class	NoInitClass;
 
@@ -80,10 +72,6 @@ class	NoInitClass;
 **	This efficiency can be implemented by deriving an integral vector template
 **	from this one in order to supply more efficient routines.
 */
-
-// Why, oh why does Visual C need this!!! It's bugged. <sigh>
-#pragma warning(disable : 4505)
-
 
 template<class T>
 class VectorClass
@@ -491,6 +479,7 @@ class DynamicVectorClass : public VectorClass<T>
 	public:
 		//#CFE_TODO Identify why this is necessary and remove
 		// Bring these explicitly into scope, as another symbol in scope seems to be shadowing them and causing strange build errors.
+		using VectorClass<T>::Vector;
 		using VectorClass<T>::VectorMax;
 		using VectorClass<T>::Length;
 		using VectorClass<T>::IsAllocated;
@@ -1094,9 +1083,5 @@ bool Pointer_Vector_Remove(T const * ptr, VectorClass<T *> & vec)
 	}
 	return(false);
 }
-
-#ifdef _MSC_VER
-#pragma warning (default : 4702) // unreachable code, happens with some uses of these templates
-#endif
 
 #endif

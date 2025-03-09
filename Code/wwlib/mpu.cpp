@@ -35,11 +35,12 @@
  *   Get_CPU_Rate -- Fetch the rate of CPU ticks per second.                                   *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include	"always.h"
-#include	"win.h"
-#include	"mpu.h"
+#include "always.h"
+#include "win.h"
+#include "mpu.h"
 #include "math.h"
-#include <assert.h>
+#include <intrin.h>
+#include <cassert>
 
 typedef union {
 	LARGE_INTEGER LargeInt;
@@ -86,16 +87,9 @@ unsigned long Get_CPU_Rate(unsigned long & high)
 
 unsigned long Get_CPU_Clock(unsigned long & high)
 {
-	int h;
-	int l;
-	__asm {
-		_emit 0Fh
-		_emit 31h
-		mov	[h],edx
-		mov	[l],eax
-	}
-	high = h;
-	return(l);
+	const DWORD64 tsc = __rdtsc();
+	high = (unsigned long)(tsc >> 32);
+	return (unsigned long)(tsc & 0xFFFFFFFF);
 }
 
 
@@ -112,8 +106,6 @@ unsigned long Get_CPU_Clock(unsigned long & high)
 **
 */
 
-#define ASM_RDTSC _asm _emit 0x0f _asm _emit 0x31
-
 // Max # of samplings to allow before giving up and returning current average.
 #define MAX_TRIES			20
 #define ROUND_THRESHOLD		6
@@ -126,27 +118,24 @@ static unsigned long TSC_High;
 
 void RDTSC(void)
 {
-    _asm
-    {
-        ASM_RDTSC;
-        mov     TSC_Low, eax
-        mov     TSC_High, edx
-    }
+	const DWORD64 tsc = __rdtsc();
+	TSC_Low = (unsigned long)(tsc & 0xFFFFFFFF);
+	TSC_High = (unsigned long)(tsc >> 32);
 }
 
 
 int Get_RDTSC_CPU_Speed(void)
 {
 	LARGE_INTEGER t0,t1;
-	DWORD	freq=0;						// Most current freq. calc.
-	DWORD	freq2=0;						// 2nd most current freq. calc.
-	DWORD	freq3=0;						// 3rd most current freq. calc.
-	DWORD	total;						// Sum of previous three freq. calc.
+	DWORD64	freq=0;						// Most current freq. calc.
+	DWORD64	freq2=0;						// 2nd most current freq. calc.
+	DWORD64	freq3=0;						// 3rd most current freq. calc.
+	DWORD64	total;						// Sum of previous three freq. calc.
 	int	tries=0;						// Number of times a calculation has been
 												// made on this call
-	DWORD	total_cycles=0, cycles;	// Clock cycles elapsed during test
-	DWORD	stamp0, stamp1;			// Time Stamp for beginning and end of test
-	DWORD	total_ticks=0, ticks;	// Microseconds elapsed during test
+	DWORD64	total_cycles=0, cycles;	// Clock cycles elapsed during test
+	DWORD64	stamp0, stamp1;			// Time Stamp for beginning and end of test
+	DWORD64	total_ticks=0, ticks;	// Microseconds elapsed during test
 // DWORD	current = 0;				// Elapsed time during loop
 	LARGE_INTEGER count_freq;			// Hi-Res Performance Counter frequency
 
@@ -197,8 +186,7 @@ int Get_RDTSC_CPU_Speed(void)
 			QueryPerformanceCounter(&t1);
 		}
 
-		ASM_RDTSC;
-		_asm	mov	stamp0, EAX
+		stamp0 = __rdtsc();
 
 		t0.LowPart = t1.LowPart;		// Reset Initial Time
 		t0.HighPart = t1.HighPart;
@@ -211,9 +199,7 @@ int Get_RDTSC_CPU_Speed(void)
 			QueryPerformanceCounter(&t1);
 		}
 
-		ASM_RDTSC;
-		_asm	mov	stamp1, EAX
-
+		stamp1 = __rdtsc();
 
 		cycles = stamp1 - stamp0;					// # of cycles passed between reads
 

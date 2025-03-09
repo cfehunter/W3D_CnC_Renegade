@@ -45,7 +45,6 @@
 #include "mss.h"
 #pragma warning (pop)
 
-//#include <malloc.h>
 #include "vector3.h"
 #include "matrix3d.h"
 #include "refcount.h"
@@ -74,7 +73,7 @@ class SoundHandleClass;
 //
 //	Typedefs
 //
-typedef unsigned long MILES_HANDLE;
+typedef uintptr_t MILES_HANDLE;
 
 typedef enum
 {

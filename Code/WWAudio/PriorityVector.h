@@ -37,7 +37,7 @@
 #ifndef __PRIORITY_VECTOR_H
 #define __PRIORITY_VECTOR_H
 
-#include "Vector.H"
+#include "Vector.h"
 
 ////////////////////////////////////////////////////////////////////
 //
@@ -48,6 +48,10 @@ template<class T>
 class PriorityVectorClass : public DynamicVectorClass<T>
 {
 	public:
+
+		//#CFE_TODO: Figure out why names are colliding
+		using DynamicVectorClass<T>::Vector;
+		using DynamicVectorClass<T>::ActiveCount;
 
 		virtual bool	Process_Head (T &object);
 		virtual bool	Add_Low (T const &object);

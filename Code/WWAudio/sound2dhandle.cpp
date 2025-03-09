@@ -365,7 +365,7 @@ Sound2DHandleClass::Set_Sample_Playback_Rate (S32 rate)
 //
 //////////////////////////////////////////////////////////////////////
 void
-Sound2DHandleClass::Set_Miles_Handle (uint32 handle)
+Sound2DHandleClass::Set_Miles_Handle (uintptr_t handle)
 {
 	SampleHandle = (HSAMPLE)handle;
 	return ;

@@ -215,13 +215,12 @@ protected:
 ** Use the following macros to automatically enable pointer-remap DEBUG code.  Remember that 
 ** in all cases you submit a pointer to the pointer you want re-mapped.
 */
-//#CFE_TODO: Consider adding the old pointer as a parameter to the macro. Will require a lot of fixup though.
 #ifdef WWDEBUG
-#define REQUEST_POINTER_REMAP(pp)					SaveLoadSystemClass::Request_Pointer_Remap(reinterpret_cast<uint32>(*pp), pp,__FILE__,__LINE__)
-#define REQUEST_REF_COUNTED_POINTER_REMAP(pp)	SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap(reinterpret_cast<uint32>(*pp), pp,__FILE__,__LINE__)
+#define REQUEST_POINTER_REMAP(old_ptr_id, pp)					SaveLoadSystemClass::Request_Pointer_Remap(old_ptr_id, pp,__FILE__,__LINE__)
+#define REQUEST_REF_COUNTED_POINTER_REMAP(old_ptr_id, pp)	SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap(old_ptr_id, pp,__FILE__,__LINE__)
 #else
-#define REQUEST_POINTER_REMAP(pp)					SaveLoadSystemClass::Request_Pointer_Remap(reinterpret_cast<uint32>(*pp), pp)
-#define REQUEST_REF_COUNTED_POINTER_REMAP(pp)	SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap(reinterpret_cast<uint32>(*pp), pp)
+#define REQUEST_POINTER_REMAP(old_ptr_id, pp)					SaveLoadSystemClass::Request_Pointer_Remap(old_ptr_id, pp)
+#define REQUEST_REF_COUNTED_POINTER_REMAP(old_ptr_id, pp)	SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap(old_ptr_id, pp)
 #endif
 
 

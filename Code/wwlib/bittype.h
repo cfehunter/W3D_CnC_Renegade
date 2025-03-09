@@ -41,6 +41,8 @@
 #ifndef BITTYPE_H
 #define BITTYPE_H
 
+#include <cstdint>
+
 typedef unsigned char	uint8;
 typedef unsigned short	uint16;
 typedef unsigned long	uint32;
@@ -62,5 +64,7 @@ typedef unsigned short	USHORT;
 typedef const char *		LPCSTR;
 typedef unsigned int    UINT;
 typedef unsigned long   ULONG;
+
+typedef uintptr_t uintptr;
 
 #endif //BITTYPE_H

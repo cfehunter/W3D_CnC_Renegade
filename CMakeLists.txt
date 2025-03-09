@@ -28,6 +28,9 @@ if((WIN32 OR "${CMAKE_SYSTEM}" MATCHES "Windows") AND ${CMAKE_SIZEOF_VOID_P} EQU
     #if(CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "12.0.8804")
         add_subdirectory(Dependencies/olddx)
     #endif()
+# Using header only stubs for all other platforms
+else()
+    add_subdirectory(Dependencies/HeaderOnlyStubs)
 endif()
 
 option(RENEGADE_CLIENT "Build full game client." ON)

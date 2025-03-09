@@ -190,7 +190,8 @@ public:
 template <class T> void
 AudioCallbackListClass<T>::Add_Callback (T pointer, uint32 user_data)
 {
-	Add ( AUDIO_CALLBACK_STRUCT<T> (pointer, user_data));
+	//#CFE_TODO Find out why Add is colliding
+	this->Add ( AUDIO_CALLBACK_STRUCT<T> (pointer, user_data));
 	return ;
 }
 

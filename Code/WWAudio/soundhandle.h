@@ -90,7 +90,7 @@ public:
 	//
 	//	Initialization
 	//	
-	virtual void	Set_Miles_Handle (uint32 handle) = 0;
+	virtual void	Set_Miles_Handle (uintptr_t handle) = 0;
 	virtual void	Initialize (SoundBufferClass *buffer);
 
 	//

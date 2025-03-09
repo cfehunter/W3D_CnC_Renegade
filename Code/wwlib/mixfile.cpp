@@ -523,7 +523,7 @@ void	MixFileCreator::Add_File( const char * source_filename, const char * saved_
 			int size = file->Size();
 			while ( size ) {
 				char buffer[ 4096 ];
-				int amount = MIN( sizeof( buffer ), size );
+				int amount = min<int>(sizeof( buffer ), size );
 				size -= amount;
 				file->Read( buffer, amount );
 				if ( MixFile->Write( buffer, amount ) != amount ) {
@@ -568,7 +568,7 @@ void	MixFileCreator::Add_File( const char * filename, FileClass *file )
 		int size = file->Size();
 		while ( size ) {
 			char buffer[ 4096 ];
-			int amount = MIN( sizeof( buffer ), size );
+			int amount = min<int>( sizeof( buffer ), size );
 			size -= amount;
 			file->Read( buffer, amount );
 			if ( MixFile->Write( buffer, amount ) != amount ) {

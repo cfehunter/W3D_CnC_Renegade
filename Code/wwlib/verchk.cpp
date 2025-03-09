@@ -209,7 +209,7 @@ Get_Image_File_Header (HINSTANCE app_instance, IMAGE_FILE_HEADER *file_header)
 //
 ////////////////////////////////////////////////////////////////////////
 int
-Compare_EXE_Version (int app_instance, const char *filename)
+Compare_EXE_Version (uintptr_t app_instance, const char *filename)
 {
 	int retval = 0;
 

@@ -34,8 +34,12 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#define CustomStringify(x) #x
+#define ExpandAndStringify(x) CustomStringify(x)
+
 
 #include "audiblesound.h"
+#pragma message("_CRTIMP expands to: " ExpandAndStringify(_CRTIMP))
 #include "wwaudio.h"
 #include "ww3d.h"
 #include "wwdebug.h"
@@ -53,7 +57,7 @@
 #include "sound2dhandle.h"
 #include "systimer.h"
 
-
+#include <iostream>
 //////////////////////////////////////////////////////////////////////////////////
 //	Static factories
 //////////////////////////////////////////////////////////////////////////////////
@@ -821,10 +825,12 @@ AudibleSoundClass::Initialize_Miles_Handle (void)
 		float real_volume = Determine_Real_Volume ();
 		m_SoundHandle->Set_Sample_Volume (int(real_volume * 127.0F));
 
+		//#CFE_TODO: Miles is stubbed out, but converting this to an s32 is a 64-bit to 32-bit conversion problem		
+		/*
 		//
 		// Associate this object instance with the handle
 		//
-		m_SoundHandle->Set_Sample_User_Data (INFO_OBJECT_PTR, (S32)this);
+		m_SoundHandle->Set_Sample_User_Data (INFO_OBJECT_PTR, (S32)this);*/
 	}
 
 	return ;
@@ -2031,9 +2037,9 @@ AudibleSoundClass::Load (ChunkLoadClass &cload)
 
 						case VARID_THIS_PTR:
 						{
-							AudibleSoundClass *old_ptr = NULL;
+							uint32 old_ptr;
 							cload.Read(&old_ptr, sizeof (old_ptr));
-							SaveLoadSystemClass::Register_Pointer (old_ptr, this);
+							SaveLoadSystemClass::Register_Pointer(old_ptr, this);
 						}
 						break;
 					}

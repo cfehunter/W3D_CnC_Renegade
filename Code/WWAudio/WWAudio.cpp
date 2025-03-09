@@ -1657,7 +1657,7 @@ WWAudioClass::Get_2D_Sample (const AudibleSoundClass &sound_obj)
 		if (sample != NULL) {
 
 			// Get a pointer to the object that is currently using this sample
-			AudibleSoundClass *sound_obj = (AudibleSoundClass *)::AIL_sample_user_data (sample, INFO_OBJECT_PTR);
+			AudibleSoundClass* sound_obj = (AudibleSoundClass*)(::AIL_sample_user_data(sample, INFO_OBJECT_PTR));
 			if (sound_obj == NULL) {
 
 				// Return this sample handle to the caller
@@ -3232,7 +3232,7 @@ WWAudioClass::Save_To_Registry
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 U32 AILCALLBACK
-WWAudioClass::File_Open_Callback (char const *filename, U32 *file_handle)
+WWAudioClass::File_Open_Callback (char const *filename, uintptr*file_handle)
 {
 	U32 retval = false;
 
@@ -3243,7 +3243,7 @@ WWAudioClass::File_Open_Callback (char const *filename, U32 *file_handle)
 		//
 		FileClass *file = Get_Instance ()->Get_File (filename);
 		if (file != NULL && file->Open ()) {
-			(*file_handle) = (U32)file;
+			(*file_handle) = (uintptr)file;
 			retval = true;
 		}
 	}
@@ -3258,7 +3258,7 @@ WWAudioClass::File_Open_Callback (char const *filename, U32 *file_handle)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 void AILCALLBACK
-WWAudioClass::File_Close_Callback (U32 file_handle)
+WWAudioClass::File_Close_Callback (uintptr file_handle)
 {
 	if (Get_Instance () != NULL) {
 
@@ -3281,7 +3281,7 @@ WWAudioClass::File_Close_Callback (U32 file_handle)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 S32 AILCALLBACK
-WWAudioClass::File_Seek_Callback (U32 file_handle, S32 offset, U32 type)
+WWAudioClass::File_Seek_Callback (uintptr file_handle, S32 offset, U32 type)
 {
 	S32 retval = 0;
 
@@ -3326,7 +3326,7 @@ WWAudioClass::File_Seek_Callback (U32 file_handle, S32 offset, U32 type)
 //
 ////////////////////////////////////////////////////////////////////////////////////////////
 U32 AILCALLBACK
-WWAudioClass::File_Read_Callback (U32 file_handle, void *buffer, U32 bytes)
+WWAudioClass::File_Read_Callback (uintptr file_handle, void *buffer, U32 bytes)
 {
 	U32 retval = 0;
 
@@ -3796,10 +3796,10 @@ void WWAudioClass::Load_Default_Volume (int &defaultmusicvolume, int &defaultsou
 		}
 	}
 
-	defaultmusicvolume	  = MIN (maxsetting, MAX (minsetting, AudioIni->Get_Int (INI_DEFAULT_VOLUME_SECTION, INI_MUSIC_VOLUME_ENTRY, 31)));
-	defaultsoundvolume	  = MIN (maxsetting, MAX (minsetting, AudioIni->Get_Int (INI_DEFAULT_VOLUME_SECTION, INI_SOUND_VOLUME_ENTRY, 43)));
-	defaultdialogvolume	  = MIN (maxsetting, MAX (minsetting, AudioIni->Get_Int (INI_DEFAULT_VOLUME_SECTION, INI_DIALOG_VOLUME_ENTRY, 50)));
-	defaultcinematicvolume = MIN (maxsetting, MAX (minsetting, AudioIni->Get_Int (INI_DEFAULT_VOLUME_SECTION, INI_CINEMATIC_VOLUME_ENTRY, 100)));
+	defaultmusicvolume     = min(maxsetting, max(minsetting, AudioIni->Get_Int (INI_DEFAULT_VOLUME_SECTION, INI_MUSIC_VOLUME_ENTRY, 31)));
+	defaultsoundvolume     = min(maxsetting, max(minsetting, AudioIni->Get_Int (INI_DEFAULT_VOLUME_SECTION, INI_SOUND_VOLUME_ENTRY, 43)));
+	defaultdialogvolume    = min(maxsetting, max(minsetting, AudioIni->Get_Int (INI_DEFAULT_VOLUME_SECTION, INI_DIALOG_VOLUME_ENTRY, 50)));
+	defaultcinematicvolume = min(maxsetting, max(minsetting, AudioIni->Get_Int (INI_DEFAULT_VOLUME_SECTION, INI_CINEMATIC_VOLUME_ENTRY, 100)));
 }
 
 

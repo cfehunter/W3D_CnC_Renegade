@@ -460,16 +460,69 @@ void RLEBlitTransZRemapXlat<unsigned short>::Blit(void * dest, void const * sour
 	unsigned char const * remapper = *RemapTable;
 	unsigned short const * transtable = TranslateTable;
 
+	const unsigned char* src_bytes = static_cast<const unsigned char*>(source);
+	unsigned short* dest_shorts = static_cast<unsigned short*>(dest);
+
+	while (leadskip > 0)
+	{
+		--leadskip;
+
+		unsigned char current_byte = *src_bytes;
+		++src_bytes;
+
+		// If this is a non-zero byte then continue
+		if (current_byte)
+			continue;
+
+		current_byte = *src_bytes;
+		++src_bytes;
+
+		// Subtract the read byte value from the leadskip
+		leadskip -= current_byte;
+
+		// Add one back into leadskip
+		++leadskip;
+	}
+
+	// Skip remaining transparent pixels for the lead
+	leadskip = -leadskip;
+	len -= leadskip;
+	dest_shorts += leadskip;
+
+	while (len > 0)
+	{
+		unsigned char current_byte = *src_bytes;
+		++src_bytes;
+
+		// Transparent. Skip the span
+		if (current_byte == 0)
+		{
+			current_byte = *src_bytes;
+			++src_bytes;
+			dest_shorts += current_byte;
+			len -= current_byte;
+		}
+		// Non-transparent. Copy the remapped and translated value.
+		else
+		{
+			*dest_shorts = transtable[remapper[current_byte]];
+			++dest_shorts;
+			--len;
+		}
+	}
+
+	// Original assembly code
+#if 0
 	/*
 	**	Set up the working registers for the blit operation.
 	*/
 	__asm {
-		mov	ecx,[len]
-		mov	edi,[dest]
-		mov	esi,[source]
-		mov	ebx,[remapper]
-		mov	edx,[leadskip]
-		xor	eax,eax
+		mov	ecx,[len] // Load length into ecx register
+		mov	edi,[dest] // Load dest pointer into edi register
+		mov	esi,[source] // Load source pointer into esi register
+		mov	ebx,[remapper] // Load remapper table into ebx register
+		mov	edx,[leadskip] // Load lead skip amount into edx register
+		xor	eax,eax // zero eax register (includes al)
 	}
 
 	/*
@@ -480,16 +533,16 @@ void RLEBlitTransZRemapXlat<unsigned short>::Blit(void * dest, void const * sour
 	*/
 moreskip:
 	__asm {
-		test	edx,edx
+		test	edx,edx // End if edx (leadskip) is zero
 		jle	nomoreskip
-		dec	edx
-		lodsb
-		test	al,al
+		dec	edx // Decrement the leadskip count
+		lodsb // Load source byte into al (eax low byte)
+		test	al,al // Return to start if loaded byte is non-zero
 		jnz	moreskip
-		lodsb
-		sub	edx,eax
-		inc	edx
-		jmp	moreskip
+		lodsb // Load another source byte into al (eax low byte)
+		sub	edx,eax // Subtract the loaded byte from the lead skip
+		inc	edx // Increment the leadskip
+		jmp	moreskip // Repeat
 	}
 nomoreskip:
 
@@ -510,17 +563,17 @@ nomoreskip:
 	*/
 moredata:
 	__asm {
-		xor	eax,eax
-		or	ecx,ecx
+		xor	eax,eax // Zero eax
+		or	ecx,ecx // End if length <= 0
 		jle	fini
-		lodsb
+		lodsb // Load a byte from source into al
 		test	al,al
-		jz	transparent
-		mov	al,[ebx+eax]
-		mov	ax,[edx+eax*2]
-		dec	ecx
-		stosw
-		jmp	moredata
+		jz	transparent // if al is zero jump to transparent
+		mov	al,[ebx+eax] // Index into remap table and load into al
+		mov	ax,[edx+eax*2] // Index into translation table and load int ax (16-bit)
+		dec	ecx // Decrement length
+		stosw // Stores the 16-bit value in AX into the destination buffer
+		jmp	moredata // Repeat
 	}
 
 	/*
@@ -529,21 +582,77 @@ moredata:
 	*/
 transparent:
 	__asm {
-		lodsb
-		lea	edi,[edi+eax*2]
-		sub	ecx,eax
-		jmp	moredata
+		lodsb // Load a single byte from the input into al
+		lea	edi,[edi+eax*2] // increment destination by that number of shorts
+		sub	ecx,eax // subtract that number from length
+		jmp	moredata // read more
 	}
 
 fini:;
+#endif 
 }
 
 
 void RLEBlitTransRemapXlat<unsigned short>::Blit(void * dest, void const * source, int len, int leadskip) const
 {
+	// Seems to be identical to RLEBlitTransZRemapXlat except RemapTable is fixed
+
 	unsigned char const * remapper = RemapTable;
 	unsigned short const * transtable = TranslateTable;
 
+	const unsigned char* src_bytes = static_cast<const unsigned char*>(source);
+	unsigned short* dest_shorts = static_cast<unsigned short*>(dest);
+
+	while (leadskip > 0)
+	{
+		--leadskip;
+
+		unsigned char current_byte = *src_bytes;
+		++src_bytes;
+
+		// If this is a non-zero byte then continue
+		if (current_byte)
+			continue;
+
+		current_byte = *src_bytes;
+		++src_bytes;
+
+		// Subtract the read byte value from the leadskip
+		leadskip -= current_byte;
+
+		// Add one back into leadskip
+		++leadskip;
+	}
+
+	// Skip remaining transparent pixels for the lead
+	leadskip = -leadskip;
+	len -= leadskip;
+	dest_shorts += leadskip;
+
+	while (len > 0)
+	{
+		unsigned char current_byte = *src_bytes;
+		++src_bytes;
+
+		// Transparent. Skip the span
+		if (current_byte == 0)
+		{
+			current_byte = *src_bytes;
+			++src_bytes;
+			dest_shorts += current_byte;
+			len -= current_byte;
+		}
+		// Non-transparent. Copy the remapped and translated value.
+		else
+		{
+			*dest_shorts = transtable[remapper[current_byte]];
+			++dest_shorts;
+			--len;
+		}
+	}
+
+	// Original asm
+#if 0
 	/*
 	**	Set up the working registers for the blit operation.
 	*/
@@ -564,16 +673,16 @@ void RLEBlitTransRemapXlat<unsigned short>::Blit(void * dest, void const * sourc
 	*/
 moreskip:
 	__asm {
-		test	edx,edx
-		jle	nomoreskip
-		dec	edx
-		lodsb
+		test	edx,edx 
+		jle	nomoreskip // if leadskip <= 0 end
+		dec	edx // decrement leadskip
+		lodsb // load a single byte from source into al register
 		test	al,al
-		jnz	moreskip
-		lodsb
-		sub	edx,eax
-		inc	edx
-		jmp	moreskip
+		jnz	moreskip // Skip if non-zero
+		lodsb // Load a single byte from source into al register (lower part of eax)
+		sub	edx,eax  // subtract that byte value from the leadskip
+		inc	edx // add one to lead count
+		jmp	moreskip // continue
 	}
 nomoreskip:
 
@@ -594,16 +703,16 @@ nomoreskip:
 	*/
 moredata:
 	__asm {
-		xor	eax,eax
+		xor	eax,eax // zero the eax register
 		or	ecx,ecx
-		jle	fini
-		lodsb
+		jle	fini // end when len <= 0
+		lodsb // load a single byte from source into al
 		test	al,al
-		jz	transparent
-		mov	al,[ebx+eax]
-		mov	ax,[edx+eax*2]
-		dec	ecx
-		stosw
+		jz	transparent // if the al is transparent then handle it
+		mov	al,[ebx+eax] // index into the remap table with the loaded byte value and store in al
+		mov	ax,[edx+eax*2] // index into the translation table with the remapped value and store in ax (16-bit)
+		dec	ecx // decrement len
+		stosw // store ax into the destination buffer
 		jmp	moredata
 	}
 
@@ -620,12 +729,69 @@ transparent:
 	}
 
 fini:;
+#endif
 }
 
 
 void RLEBlitTransXlat<unsigned short>::Blit(void * dest, void const * source, int len, int leadskip) const
 {
+	// Seems to be identical to RLEBlitTransZRemapXlat except there's no remap table
+
 	unsigned short const * transtable = TranslateTable;
+
+	const unsigned char* src_bytes = static_cast<const unsigned char*>(source);
+	unsigned short* dest_shorts = static_cast<unsigned short*>(dest);
+
+	while (leadskip > 0)
+	{
+		--leadskip;
+
+		unsigned char current_byte = *src_bytes;
+		++src_bytes;
+
+		// If this is a non-zero byte then continue
+		if (current_byte)
+			continue;
+
+		current_byte = *src_bytes;
+		++src_bytes;
+
+		// Subtract the read byte value from the leadskip
+		leadskip -= current_byte;
+
+		// Add one back into leadskip
+		++leadskip;
+	}
+
+	// Skip remaining transparent pixels for the lead
+	leadskip = -leadskip;
+	len -= leadskip;
+	dest_shorts += leadskip;
+
+	while (len > 0)
+	{
+		unsigned char current_byte = *src_bytes;
+		++src_bytes;
+
+		// Transparent. Skip the span
+		if (current_byte == 0)
+		{
+			current_byte = *src_bytes;
+			++src_bytes;
+			dest_shorts += current_byte;
+			len -= current_byte;
+		}
+		// Non-transparent. Copy the translated value.
+		else
+		{
+			*dest_shorts = transtable[current_byte];
+			++dest_shorts;
+			--len;
+		}
+	}
+
+	// Original asm
+#if 0
 
 	/*
 	**	Set up the working registers for the blit operation.
@@ -648,15 +814,15 @@ void RLEBlitTransXlat<unsigned short>::Blit(void * dest, void const * source, in
 moreskip:
 	__asm {
 		test	edx,edx
-		jle	nomoreskip
-		dec	edx
-		lodsb
+		jle	nomoreskip // end if leadskip <= 0
+		dec	edx // decrement leadskip
+		lodsb // load a single byte from source into al register
 		test	al,al
-		jnz	moreskip
-		lodsb
-		sub	edx,eax
-		inc	edx
-		jmp	moreskip
+		jnz	moreskip // If the byte isn't 0 skip
+		lodsb // load a single byte from source into al register (lower eax register)
+		sub	edx,eax // subtract from lead skip
+		inc	edx // add one to lead skip
+		jmp	moreskip // continue
 	}
 nomoreskip:
 
@@ -701,6 +867,7 @@ transparent:
 	}
 
 fini:;
+#endif 
 }
 
 #endif

@@ -43,7 +43,7 @@
 
 #include "always.h"
 #pragma warning (push, 3)
-#include "Mss.H"
+#include "mss.h"
 #pragma warning (pop)
 
 #include "Vector.H"
@@ -591,10 +591,10 @@ protected:
 	//////////////////////////////////////////////////////////////////////
 	//	Miles File Callbacks
 	//////////////////////////////////////////////////////////////////////
-	static U32 AILCALLBACK	File_Open_Callback (char const *filename, U32 *file_handle);
-	static void AILCALLBACK	File_Close_Callback (U32 file_handle);
-	static S32 AILCALLBACK	File_Seek_Callback (U32 file_handle, S32 offset, U32 type);
-	static U32 AILCALLBACK	File_Read_Callback (U32 file_handle, void *buffer, U32 bytes);
+	static U32 AILCALLBACK	File_Open_Callback (char const *filename, uintptr *file_handle);
+	static void AILCALLBACK	File_Close_Callback (uintptr file_handle);
+	static S32 AILCALLBACK	File_Seek_Callback (uintptr file_handle, S32 offset, U32 type);
+	static U32 AILCALLBACK	File_Read_Callback (uintptr file_handle, void *buffer, U32 bytes);
 
 private:
 

@@ -224,7 +224,7 @@ bool Bit_Blit(Surface & dest, Rect const & dcliprect, Rect const & ddrect, Surfa
 	*/
 	if (drect.Width * dest.Bytes_Per_Pixel() == dest.Stride() && dest.Stride() == source.Stride()) {
 
-		int length = MIN(srect.Height*srect.Width, drect.Height*drect.Width);
+		int length = min(srect.Height*srect.Width, drect.Height*drect.Width);
 		if (overlapped) {
 			blitter.BlitBackward(dbuffer, sbuffer, length);
 		} else {
@@ -249,7 +249,7 @@ bool Bit_Blit(Surface & dest, Rect const & dcliprect, Rect const & ddrect, Surfa
 		/*
 		**	This perform a line-by-line pixel copy.
 		*/
-		int height = MIN(srect.Height, drect.Height);
+		int height = min(srect.Height, drect.Height);
 		if (overlapped) {
 			for (int y = 0; y < height; y++) {
 				blitter.BlitBackward(dbuffer, sbuffer, srect.Width);
@@ -391,7 +391,7 @@ bool RLE_Blit(Surface & dest, Rect const & dcliprect, Rect const & ddrect, Surfa
 	**	This perform a line-by-line pixel copy.
 	*/
 	int dstride = dest.Stride();
-	int height = MIN(srect.Height, drect.Height);
+	int height = min(srect.Height, drect.Height);
 	for (int y = 0; y < height; y++) {
 
 		/*

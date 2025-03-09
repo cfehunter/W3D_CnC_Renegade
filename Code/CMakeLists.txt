@@ -6,10 +6,7 @@ target_compile_definitions(wwcommon INTERFACE
     #WIN32_LEAN_AND_MEAN
     #_WIN32_WINNT=0x400
     #_MBCS
-    _CRT_NONSTDC_NO_WARNINGS
-    _CRT_SECURE_NO_WARNINGS
     $<$<CONFIG:Debug>:WWDEBUG>
-    $<$<CONFIG:Debug>:_DEBUG>
 )
 
 target_compile_options(wwcommon INTERFACE

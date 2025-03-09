@@ -52,6 +52,10 @@ target_link_libraries(wwaudio PRIVATE
     wwcommon
 )
 
+target_link_libraries(wwaudio PUBLIC
+    headeronlystubs
+)
+
 target_sources(wwaudio PRIVATE ${WWAUDIO_SRC})
 
 # This module needs building differently for the level editor

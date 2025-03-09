@@ -580,8 +580,8 @@ inline bool SimpleDynVecClass<T>::Grow(int new_size_hint)
 	** and grow at least up to the user's new_size_hint
 	*/
 	const int length = this->Length();
-	int new_size = MAX(length + (length >> 2), length + 4);
-	new_size = MAX(new_size,new_size_hint);
+	int new_size = max(length + (length >> 2), length + 4);
+	new_size = max(new_size,new_size_hint);
 	
 	return Resize(new_size);
 }

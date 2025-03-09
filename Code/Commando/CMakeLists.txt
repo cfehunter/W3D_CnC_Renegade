@@ -451,6 +451,7 @@ target_link_libraries(commando INTERFACE
     binkmovie
     wwphys
     combat
+    headeronlystubs
 )
 
 target_compile_definitions(commando INTERFACE

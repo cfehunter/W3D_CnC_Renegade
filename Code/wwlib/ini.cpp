@@ -391,6 +391,8 @@ int INIClass::Load(const char *filename)
  *=============================================================================================*/
 int INIClass::Load(Straw & ffile)
 {
+	// Divider need to be able to be assigned to " ", while remaining mutable
+	char space_divider[2] = { ' ', '\0' };
 	bool end_of_file = false;
 	char buffer[MAX_LINE_LENGTH];
 
@@ -472,7 +474,7 @@ int INIClass::Load(Straw & ffile)
 				strtrim(divider);
 				if (!strlen(divider)) {
 					if (KeepBlankEntries)
-						divider = " ";
+						divider = space_divider;
 					else
 						continue;
 				}
@@ -538,7 +540,7 @@ int INIClass::Load(Straw & ffile)
 				strtrim(divider);
 				if (!strlen(divider)) {
 					if (KeepBlankEntries)
-						divider = " ";
+						divider = space_divider;
 					else
 						continue;
 				}

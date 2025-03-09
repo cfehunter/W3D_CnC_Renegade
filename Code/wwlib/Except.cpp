@@ -47,8 +47,12 @@
  * Exception_Handler -- Exception handler filter function                                      *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+ //#CFE_TODO: This entire file is windows specific. if we want to go cross platform this will need reworking and abstracting
+ // It also has a metric-shit-tonne of unsafe string manipulation that should be replaced.
+
 #ifdef _MSC_VER
 
+#include <array>
 #include	"always.h"
 #include <windows.h>
 #include	"assert.h"
@@ -74,10 +78,10 @@ void DebugString(char const *, ...){};
 
 #ifdef _WIN64
 // Print pointers as 16 hex digits
-#define PRIPTRFMT "%016X"
+#define PRIPTRFMT "%016zX"
 #else
 // Print pointers as 8 hex digits
-#define PRIPTRFMT "%08X"
+#define PRIPTRFMT "%08zX"
 #endif
 
 /*
@@ -92,7 +96,7 @@ void DebugString(char const *, ...){};
 static char ExceptionText [65536];
 
 bool SymbolsAvailable = false;
-HINSTANCE ImageHelp = (HINSTANCE) -1;
+HMODULE DbgHelp = nullptr;
 
 void (*AppCallback)(void) = NULL;
 char *(*AppVersionCallback)(void) = NULL;
@@ -125,6 +129,17 @@ DynamicVectorClass<ThreadInfoType*> ThreadList;
 ** Definitions to allow run-time linking to the Imagehlp.dll functions.
 **
 */
+#ifdef _WIN64
+typedef BOOL(WINAPI* SymCleanupType) (HANDLE hProcess);
+typedef BOOL(WINAPI* SymGetSymFromAddrType) (HANDLE hProcess, DWORD64 Address, PDWORD64 Displacement, PIMAGEHLP_SYMBOL Symbol);
+typedef BOOL(WINAPI* SymInitializeType) (HANDLE hProcess, PCSTR UserSearchPath, BOOL fInvadeProcess);
+typedef BOOL(WINAPI* SymLoadModuleType) (HANDLE hProcess, HANDLE hFile, PCSTR ImageName, PCSTR ModuleName, DWORD64 BaseOfDll, DWORD64 SizeOfDll);
+typedef DWORD(WINAPI* SymSetOptionsType) (DWORD SymOptions);
+typedef BOOL(WINAPI* SymUnloadModuleType) (HANDLE hProcess, DWORD64 BaseOfDll);
+typedef BOOL(WINAPI* StackWalkType) (DWORD MachineType, HANDLE hProcess, HANDLE hThread, LPSTACKFRAME StackFrame, PVOID ContextRecord, PREAD_PROCESS_MEMORY_ROUTINE ReadMemoryRoutine, PFUNCTION_TABLE_ACCESS_ROUTINE FunctionTableAccessRoutine, PGET_MODULE_BASE_ROUTINE GetModuleBaseRoutine, PTRANSLATE_ADDRESS_ROUTINE TranslateAddress);
+typedef PVOID(WINAPI* SymFunctionTableAccessType) (HANDLE hProcess, DWORD64 AddrBase);
+typedef DWORD64(WINAPI* SymGetModuleBaseType) (HANDLE hProcess, DWORD64 dwAddr);
+#else
 typedef BOOL  (WINAPI *SymCleanupType) (HANDLE hProcess);
 typedef BOOL  (WINAPI *SymGetSymFromAddrType) (HANDLE hProcess, DWORD Address, LPDWORD Displacement, PIMAGEHLP_SYMBOL Symbol);
 typedef BOOL  (WINAPI *SymInitializeType) (HANDLE hProcess, LPSTR UserSearchPath, BOOL fInvadeProcess);
@@ -134,33 +149,195 @@ typedef BOOL  (WINAPI *SymUnloadModuleType) (HANDLE hProcess, DWORD BaseOfDll);
 typedef BOOL  (WINAPI *StackWalkType) (DWORD MachineType, HANDLE hProcess, HANDLE hThread, LPSTACKFRAME StackFrame, LPVOID ContextRecord, PREAD_PROCESS_MEMORY_ROUTINE ReadMemoryRoutine, PFUNCTION_TABLE_ACCESS_ROUTINE FunctionTableAccessRoutine, PGET_MODULE_BASE_ROUTINE GetModuleBaseRoutine, PTRANSLATE_ADDRESS_ROUTINE TranslateAddress);
 typedef LPVOID (WINAPI *SymFunctionTableAccessType) (HANDLE hProcess, DWORD AddrBase);
 typedef DWORD (WINAPI *SymGetModuleBaseType) (HANDLE hProcess, DWORD dwAddr);
+#endif // #endif
 
 
-static SymCleanupType							_SymCleanup = NULL;
-static SymGetSymFromAddrType				_SymGetSymFromAddr = NULL;
-static SymInitializeType						_SymInitialize = NULL;
-static SymLoadModuleType						_SymLoadModule = NULL;
-static SymSetOptionsType						_SymSetOptions = NULL;
-static SymUnloadModuleType					_SymUnloadModule = NULL;
-static StackWalkType								_StackWalk = NULL;
-static SymFunctionTableAccessType	_SymFunctionTableAccess = NULL;
-static SymGetModuleBaseType				_SymGetModuleBase = NULL;
+static SymCleanupType               _SymCleanup = NULL;
+static SymGetSymFromAddrType        _SymGetSymFromAddr = NULL;
+static SymInitializeType            _SymInitialize = NULL;
+static SymLoadModuleType            _SymLoadModule = NULL;
+static SymSetOptionsType            _SymSetOptions = NULL;
+static SymUnloadModuleType          _SymUnloadModule = NULL;
+static StackWalkType                _StackWalk = NULL;
+static SymFunctionTableAccessType   _SymFunctionTableAccess = NULL;
+static SymGetModuleBaseType         _SymGetModuleBase = NULL;
 
-static char const *ImagehelpFunctionNames[] =
+static std::array<FARPROC*, 9> Get_DbgHelp_FunctionPointers()
 {
-	"SymCleanup",
-	"SymGetSymFromAddr",
-	"SymInitialize",
-	"SymLoadModule",
-	"SymSetOptions",
-	"SymUnloadModule",
-	"StackWalk",
-	"SymFunctionTableAccess",
-	"SymGetModuleBaseType",
-	NULL
-};
+	return std::array<FARPROC*, 9>{
+		(FARPROC*)&_SymCleanup,
+		(FARPROC*)&_SymGetSymFromAddr,
+		(FARPROC*)&_SymInitialize,
+		(FARPROC*)&_SymLoadModule,
+		(FARPROC*)&_SymSetOptions,
+		(FARPROC*)&_SymUnloadModule,
+		(FARPROC*)&_StackWalk,
+		(FARPROC*)&_SymFunctionTableAccess,
+		(FARPROC*)&_SymGetModuleBase,
+	};
+}
 
+/***********************************************************************************************
+ * Init_DbgHelp -- Load the dbghelp dynamic library and fetch symbol function pointers.        *
+ * Internally checks the DbgHelp handle so redundant calls are ignored.                        *
+ *                                                                                             *
+ *                                                                                             *
+ *                                                                                             *
+ * INPUT:    Nothing                                                                           *
+ *                                                                                             *
+ * OUTPUT:   Nothing                                                                           *
+ *                                                                                             *
+ * WARNINGS: None                                                                              *
+ *                                                                                             *
+ * HISTORY:                                                                                    *
+ *   03/08/2025 CFE     : Created                                                              *
+ *=============================================================================================*/
+static void Init_DbgHelp()
+{
+	// Don't attempt to load if already loaded
+	if (DbgHelp)
+		return;
 
+	std::array<FARPROC*, 9> ImageHelpFunctions = Get_DbgHelp_FunctionPointers();
+
+	// Symbol names are different between x64 and x86
+	static constexpr std::array<const char*, 9> ImagehelpFunctionNames =
+	{
+	#ifdef _WIN64
+		"SymCleanup",
+		"SymGetSymFromAddr64",
+		"SymInitialize",
+		"SymLoadModule64",
+		"SymSetOptions",
+		"SymUnloadModule64",
+		"StackWalk64",
+		"SymFunctionTableAccess64",
+		"SymGetModuleBase64",
+	#else
+		"SymCleanup",
+		"SymGetSymFromAddr",
+		"SymInitialize",
+		"SymLoadModule",
+		"SymSetOptions",
+		"SymUnloadModule",
+		"StackWalk",
+		"SymFunctionTableAccess",
+		"SymGetModuleBase",
+	#endif // _WIN64
+	};
+
+	// Load the dll. Early out with a logged error if we can't find it
+	HMODULE dll_handle = LoadLibraryA("dbghelp.dll");
+	if (!dll_handle)
+	{
+		DebugString("Exception Handler: Unable to load dbghelp.dll\n");
+		return;
+	}
+
+	static_assert(ImageHelpFunctions.size() == ImagehelpFunctionNames.size());
+	for (size_t i = 0; i < ImageHelpFunctions.size(); ++i)
+	{
+		const FARPROC loaded_func = GetProcAddress(dll_handle, ImagehelpFunctionNames[i]);
+		*ImageHelpFunctions[i] = loaded_func;
+
+		// Log an error if this failed. It's not fatal but we'll want to know
+		if (!loaded_func)
+		{
+			DebugString("Exception Handler: Unable to load %s dbghelp.dll\n", ImagehelpFunctionNames[i]);
+		}
+	}
+}
+
+/***********************************************************************************************
+ * Load_Symbols -- Load the debug symbols. Will load the dbghelp dynamic library,              *
+ * if it has not already been loaded. SymbolsAvailable is checked before loading symbols.      *
+ *                                                                                             *
+ *                                                                                             *
+ *                                                                                             *
+ *                                                                                             *
+ * INPUT:    Nothing                                                                           *
+ *                                                                                             *
+ * OUTPUT:   true = symbols available                                                          *
+ *                                                                                             *
+ * WARNINGS: None                                                                              *
+ *                                                                                             *
+ * HISTORY:                                                                                    *
+ *   03/08/2025 CFE     : Created                                                              *
+ *=============================================================================================*/
+static bool Load_Symbols()
+{
+	// Symbols are already loaded
+	if (SymbolsAvailable)
+		return SymbolsAvailable;
+
+	// Init dbghelp function pointers if they're not already loaded
+	Init_DbgHelp();
+
+	// Retrieve the programs symbols if they are available. This can be a .pdb or a .dbg file.
+	if (_SymSetOptions)
+		_SymSetOptions(SYMOPT_DEFERRED_LOADS);
+
+	if (_SymInitialize && _SymInitialize(GetCurrentProcess(), NULL, FALSE))
+	{
+
+		if (_SymSetOptions)
+			_SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
+
+		char module_name[_MAX_PATH];
+		GetModuleFileName(NULL, module_name, sizeof(module_name));
+
+		SymbolsAvailable  = _SymLoadModule && _SymLoadModule(GetCurrentProcess(), NULL, module_name, NULL, 0, 0);
+	}
+
+	return SymbolsAvailable;
+}
+
+/***********************************************************************************************
+ * Unload_DbgHelp_AndSymbols -- Cleanup loaded symbols and unload the dbghelp dynamic lib.     *
+ * Internally guards against invalid access. Can be called regardless of state.                *
+ *                                                                                             *
+ *                                                                                             *
+ *                                                                                             *
+ *                                                                                             *
+ * INPUT:    Nothing                                                                           *
+ *                                                                                             *
+ * OUTPUT:   Nothing                                                                           *
+ *                                                                                             *
+ * WARNINGS: None                                                                              *
+ *                                                                                             *
+ * HISTORY:                                                                                    *
+ *   03/08/2025 CFE     : Created                                                              *
+ *=============================================================================================*/
+static void Unload_DbgHelp_And_Symbols()
+{
+	// Cleanup symbols
+	if (SymbolsAvailable)
+	{
+		HANDLE current_proc = GetCurrentProcess();
+
+		if (_SymCleanup)
+			_SymCleanup(current_proc);
+
+		if (_SymUnloadModule)
+			_SymUnloadModule(current_proc, NULL);
+
+		SymbolsAvailable = false;
+	}
+
+	// Null the functions
+	auto function_pointers = Get_DbgHelp_FunctionPointers();
+	for (auto* func : function_pointers)
+	{
+		*func = nullptr;
+	}
+
+	// Free the debug library
+	if (DbgHelp)
+	{
+		FreeLibrary(DbgHelp);
+		DbgHelp = nullptr;
+	}
+}
 
 /***********************************************************************************************
  * _purecall -- This function overrides the C library Pure Virtual Function Call error         *
@@ -297,7 +474,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	/*
 	** List of possible exceptions
 	*/
-	static const unsigned int _codes[] = {
+	static constexpr unsigned int _codes[] = {
 		EXCEPTION_ACCESS_VIOLATION,
 		EXCEPTION_ARRAY_BOUNDS_EXCEEDED,
 		EXCEPTION_BREAKPOINT,
@@ -324,7 +501,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	/*
 	** Information about each exception type.
 	*/
-	static char const * _code_txt[] = {
+	static constexpr const char* _code_txt[] = {
 		"Error code: EXCEPTION_ACCESS_VIOLATION\r\r\nDescription: The thread tried to read from or write to a virtual address for which it does not have the appropriate access.",
 		"Error code: EXCEPTION_ARRAY_BOUNDS_EXCEEDED\r\r\nDescription: The thread tried to access an array element that is out of bounds and the underlying hardware supports bounds checking.",
 		"Error code: EXCEPTION_BREAKPOINT\r\r\nDescription: A breakpoint was encountered.",
@@ -350,6 +527,9 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 
 	DebugString("Dump exception info\n");
 
+	// Used a lot in this function
+	const HANDLE current_proc = GetCurrentProcess();
+
 	/*
 	** Scrap buffer for constructing dump strings
 	*/
@@ -361,80 +541,24 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	memset(ExceptionText, 0, sizeof (ExceptionText));
 
 	/*
-	** If this is the first time through then fix up the imagehelp function pointers since imagehlp.dll
-	** can't be statically linked.
-	*/
-	HINSTANCE imagehelp = LoadLibrary("IMAGEHLP.DLL");
-
-	if (imagehelp != NULL) {
-		DebugString ("Exception Handler: Found IMAGEHLP.DLL - linking to required functions\n");
-		char const *function_name = NULL;
-		unsigned long *fptr = (unsigned long*) &_SymCleanup;
-		int count = 0;
-
-		do {
-			function_name = ImagehelpFunctionNames[count];
-			if (function_name) {
-				*fptr = (unsigned long) GetProcAddress(imagehelp, function_name);
-				fptr++;
-				count++;
-			}
-		} while (function_name);
-	} else {
-		DebugString("Exception Handler: Unable to load IMAGEHLP.DLL\n");
-	}
-
-
-	/*
 	** Retrieve the programs symbols if they are available
 	*/
-	if (_SymSetOptions != NULL) {
-		_SymSetOptions(SYMOPT_DEFERRED_LOADS);
-	}
-
-	int symload = 0;
-	int symbols_available = false;
-
-	if (_SymInitialize != NULL && _SymInitialize (GetCurrentProcess(), NULL, false))	{
-		DebugString("Exception Handler: Symbols are available\r\n\n");
-		symbols_available = true;
-	}
-
-	if (!symbols_available)	{
-		DebugString ("Exception Handler: SymInitialize failed with code %d - %s\n", GetLastError(), Last_Error_Text());
-	} else {
-		if (_SymSetOptions != NULL) {
-			_SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
-		}
-
-		char module_name[_MAX_PATH];
-		GetModuleFileName(NULL, module_name, sizeof(module_name));
-
-		if (_SymLoadModule != NULL) {
-			symload = _SymLoadModule(GetCurrentProcess(), NULL, module_name, NULL, 0, 0);
-		}
-
-		if (!symload) {
-			assert(_SymLoadModule != NULL);
-			DebugString ("Exception Handler: SymLoad failed for module %s with code %d - %s\n", module_name, GetLastError(), Last_Error_Text());
-		}
-	}
-
+	Load_Symbols();
 
 	unsigned char symbol [256];
-	unsigned long displacement;
+	uintptr_t displacement;
 	IMAGEHLP_SYMBOL *symptr = (IMAGEHLP_SYMBOL*)&symbol;
 
 	/*
 	** Get the exception address and the machine context at the time of the exception
 	*/
-	CONTEXT *context = e_info->ContextRecord;
+	const CONTEXT* const context = e_info->ContextRecord;
 
 	/*
 	** The following are set for access violation only
 	*/
 	int access_read_write=-1;
-	unsigned long access_address = 0;
+	uintptr_t access_address = 0;
 
 	if (e_info->ExceptionRecord->ExceptionCode == EXCEPTION_ACCESS_VIOLATION) {
 		DebugString("Exception Handler: Exception is access violation\n");
@@ -509,37 +633,50 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	DebugString("Stack walk...\n");
 	Add_Txt("\r\n  Stack walk...\r\n");
 
-	unsigned long return_addresses[256];
-	int num_addresses = Stack_Walk(return_addresses, 256, context);
+	std::array<uintptr_t, 256> return_addresses;
+#ifdef _WIN64
+	const size_t num_addresses = Stack_Walk(context->Rip, context->Rsp, context->Rbp, 0, return_addresses);
+#else
+	const size_t num_addresses = Stack_Walk(context->Eip, context->Esp, context->Ebp, 0, return_addresses);
+#endif //_WIN64
 
-	if (num_addresses) {
+	if (num_addresses)
+	{
 		char symbuf[256];
-		for (int s=0 ; s<num_addresses ; s++) {
-			unsigned long temp_addr = return_addresses[s];
+		for (size_t s = 0; s < num_addresses; ++s)
+		{
+			uintptr_t temp_addr = return_addresses[s];
 			displacement = 0;
 
-			for (int space = 0 ; space <= s ; space++) {
+			for (int space = 0 ; space <= s ; space++)
+			{
 				Add_Txt("  ");
 			}
 
-			if (symbols_available) {
+			if (SymbolsAvailable)
+			{
 				symptr->SizeOfStruct = sizeof(symbol);
 				symptr->MaxNameLength = 128;
 				symptr->Size = 0;
 				symptr->Address = temp_addr;
 
-				if (_SymGetSymFromAddr != NULL && _SymGetSymFromAddr (GetCurrentProcess(), temp_addr, &displacement, symptr)) {
+				if (_SymGetSymFromAddr && _SymGetSymFromAddr(current_proc, temp_addr, &displacement, symptr))
+				{
 					snprintf(symbuf, sizeof(symbuf), "%s + " PRIPTRFMT "\r\n", symptr->Name, displacement);
 					Add_Txt(symbuf);
 				}
-			} else {
+			}
+			else
+			{
 				snprintf(symbuf, sizeof(symbuf), "" PRIPTRFMT "\r\n", temp_addr);
 				Add_Txt(symbuf);
 			}
 		}
 
 		Add_Txt("\r\n\r\n");
-	} else {
+	}
+	else
+	{
 		DebugString("Stack walk failed!\n");
 		Add_Txt("Stack walk failed!\r\n");
 	}
@@ -577,12 +714,12 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	/*
 	** Get the thread info from ThreadClass.
 	*/
-	for (int thread = 0 ; thread < ThreadList.Count() ; thread++) {
-		snprintf(scrap, sizeof(scrap), "  ID: " PRIPTRFMT " - %s", ThreadList[thread]->ThreadID, ThreadList[thread]->ThreadName);
+	for (int thread = 0; thread < ThreadList.Count(); ++thread)
+	{
+		snprintf(scrap, sizeof(scrap), "  ID: %08X - %s", ThreadList[thread]->ThreadID, ThreadList[thread]->ThreadName);
 		Add_Txt(scrap);
-		if (GetCurrentThreadId() == ThreadList[thread]->ThreadID) {
+		if (GetCurrentThreadId() == ThreadList[thread]->ThreadID)
 			Add_Txt("   ***CURRENT THREAD***");
-		}
 		Add_Txt("\r\n");
 	}
 
@@ -607,7 +744,7 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	Add_Txt(scrap);
 	snprintf(scrap, sizeof(scrap), "Rdx:" PRIPTRFMT "\tRsi:" PRIPTRFMT "\tRdi:" PRIPTRFMT "\r\n", context->Rdx, context->Rsi, context->Rdi);
 	Add_Txt(scrap);
-	snprintf(scrap, sizeof(scrap), "EFlags:" PRIPTRFMT " \r\n", context->EFlags);
+	snprintf(scrap, sizeof(scrap), "EFlags: %08X\r\n", context->EFlags);
 	Add_Txt(scrap);
 	snprintf(scrap, sizeof(scrap), "CS:%04x  SS:%04x  DS:%04x  ES:%04x  FS:%04x  GS:%04x\r\n", context->SegCs, context->SegSs, context->SegDs, context->SegEs, context->SegFs, context->SegGs);
 	Add_Txt(scrap);
@@ -635,19 +772,19 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	** Now the FP registers.
 	*/
 	Add_Txt("\r\nFloating point status\r\n");
-	snprintf(scrap, sizeof(scrap), "     Control word: " PRIPTRFMT "\r\n", floatSave.ControlWord);
+	snprintf(scrap, sizeof(scrap), "     Control word: %08X\r\n", floatSave.ControlWord);
 	Add_Txt(scrap);
-	snprintf(scrap, sizeof(scrap), "      Status word: " PRIPTRFMT "\r\n", floatSave.StatusWord);
+	snprintf(scrap, sizeof(scrap), "      Status word: %08X\r\n", floatSave.StatusWord);
 	Add_Txt(scrap);
-	snprintf(scrap, sizeof(scrap), "         Tag word: " PRIPTRFMT "\r\n", floatSave.TagWord);
+	snprintf(scrap, sizeof(scrap), "         Tag word: %08X\r\n", floatSave.TagWord);
 	Add_Txt(scrap);
-	snprintf(scrap, sizeof(scrap), "     Error Offset: " PRIPTRFMT "\r\n", floatSave.ErrorOffset);
+	snprintf(scrap, sizeof(scrap), "     Error Offset: %08X\r\n", floatSave.ErrorOffset);
 	Add_Txt(scrap);
-	snprintf(scrap, sizeof(scrap), "   Error Selector: " PRIPTRFMT "\r\n", floatSave.ErrorSelector);
+	snprintf(scrap, sizeof(scrap), "   Error Selector: %08X\r\n", floatSave.ErrorSelector);
 	Add_Txt(scrap);
-	snprintf(scrap, sizeof(scrap), "      Data Offset: " PRIPTRFMT "\r\n", floatSave.DataOffset);
+	snprintf(scrap, sizeof(scrap), "      Data Offset: %08X\r\n", floatSave.DataOffset);
 	Add_Txt(scrap);
-	snprintf(scrap, sizeof(scrap), "    Data Selector: " PRIPTRFMT "\r\n", floatSave.DataSelector);
+	snprintf(scrap, sizeof(scrap), "    Data Selector: %08X\r\n", floatSave.DataSelector);
 	Add_Txt(scrap);
 	//snprintf(scrap, sizeof(scrap), "      Cr0NpxState: " PRIPTRFMT "\r\n", floatSave.Cr0NpxState);
 	//Add_Txt(scrap);
@@ -698,40 +835,50 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 	DebugString("Stack dump...\n");
 	Add_Txt("Stack dump (* indicates possible code address) :\r\n");
 #ifdef _WIN64
-	unsigned long* stackptr = (unsigned long*)context->Rsp;
+	uintptr_t* stackptr = (uintptr_t*)context->Rsp;
 #else
-	unsigned long *stackptr = (unsigned long*) context->Esp;
+	uintptr_t* stackptr = (uintptr_t*) context->Esp;
 #endif // _WIN64
 
-	for (int j=0 ; j<2048 ; j++) {
-		if (IsBadReadPtr(stackptr, 4)) {
+	for (int j = 0; j < 2048 ; ++j)
+	{
+		if (IsBadReadPtr(stackptr, 4))
+		{
 			/*
 			** The stack contents cannot be read so just print up question marks.
 			*/
 			snprintf(scrap, sizeof(scrap), "%08p: ", stackptr);
 			strcat(scrap, "????????\r\n");
-		} else {
+		}
+		else
+		{
 			/*
 			** If this stack address is in our memory space then try to match it with a code symbol.
 			*/
-			if (IsBadCodePtr((FARPROC)*stackptr)) {
+			if (IsBadCodePtr((FARPROC)*stackptr))
+			{
 				snprintf(scrap, sizeof(scrap), "%08p: " PRIPTRFMT " ", stackptr, *stackptr);
 				strcat(scrap, "DATA_PTR\r\n");
-			} else {
+			}
+			else
+			{
 				snprintf(scrap, sizeof(scrap), "%08p: " PRIPTRFMT "", stackptr, *stackptr);
 
-				if (symbols_available) {
+				if (SymbolsAvailable)
+				{
 					symptr->SizeOfStruct = sizeof(symbol);
 					symptr->MaxNameLength = 128;
 					symptr->Size = 0;
 					symptr->Address = *stackptr;
 
-					if (_SymGetSymFromAddr != NULL && _SymGetSymFromAddr (GetCurrentProcess(), *stackptr, &displacement, symptr)) {
+					if (_SymGetSymFromAddr && _SymGetSymFromAddr (current_proc, *stackptr, &displacement, symptr))
+					{
 						char symbuf[256];
 						snprintf(symbuf, sizeof(symbuf), " - %s + " PRIPTRFMT "", symptr->Name, displacement);
 						strcat(scrap, symbuf);
 					}
-				} else {
+				} else
+				{
 					strcat (scrap, " *");
 				}
 				strcat (scrap, "\r\n");
@@ -741,27 +888,10 @@ void Dump_Exception_Info(EXCEPTION_POINTERS *e_info)
 		stackptr++;
 	}
 
-	/*
-	** Unload the symbols.
-	*/
-	if (symbols_available) {
-		if (_SymCleanup != NULL) {
-			_SymCleanup (GetCurrentProcess());
-		}
-
-		if (symload) {
-			if (_SymUnloadModule != NULL) {
-				_SymUnloadModule(GetCurrentProcess(), NULL);
-			}
-		}
-
-	}
-
-	if (imagehelp) {
-		FreeLibrary(imagehelp);
-	}
-
 	Add_Txt ("\r\n\r\n");
+
+	// Cleanup
+	Unload_DbgHelp_And_Symbols();
 }
 
 
@@ -827,9 +957,6 @@ int Exception_Handler(int exception_code, EXCEPTION_POINTERS *e_info)
 	exception_code = exception_code;
 #endif	//_DEBUG
 
-#ifdef WWDEBUG
-	//CONTEXT *context;
-#endif WWDEBUG
 
 	if (ExceptionRecursions == 0) {
 
@@ -1087,69 +1214,12 @@ unsigned long Get_Main_Thread_ID(void)
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   6/12/2001 4:27PM ST : Created                                                             *
+ *   3/08/2025       CFE : Replaced internally with a load symbols call.                       *
  *=============================================================================================*/
 void Load_Image_Helper(void)
 {
-	/*
-	** If this is the first time through then fix up the imagehelp function pointers since imagehlp.dll
-	** can't be statically linked.
-	*/
-	if (ImageHelp == (HINSTANCE)-1) {
-		ImageHelp = LoadLibrary("IMAGEHLP.DLL");
-
-		if (ImageHelp != NULL) {
-			char const *function_name = NULL;
-			unsigned long *fptr = (unsigned long *) &_SymCleanup;
-			int count = 0;
-
-			do {
-				function_name = ImagehelpFunctionNames[count];
-				if (function_name) {
-					*fptr = (unsigned long) GetProcAddress(ImageHelp, function_name);
-					fptr++;
-					count++;
-				}
-			}
-			while (function_name);
-		}
-
-		/*
-		** Retrieve the programs symbols if they are available. This can be a .pdb or a .dbg file.
-		*/
-		if (_SymSetOptions != NULL) {
-			_SymSetOptions(SYMOPT_DEFERRED_LOADS);
-		}
-
-		int symload = 0;
-
-		if (_SymInitialize != NULL && _SymInitialize(GetCurrentProcess(), NULL, FALSE)) {
-
-			if (_SymSetOptions != NULL) {
-				_SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
-			}
-
-			char exe_name[_MAX_PATH];
-			GetModuleFileName(NULL, exe_name, sizeof(exe_name));
-
-			if (_SymLoadModule != NULL) {
-				symload = _SymLoadModule(GetCurrentProcess(), NULL, exe_name, NULL, 0, 0);
-			}
-
-			if (symload) {
-				SymbolsAvailable = true;
-			} else {
-				//assert (_SymLoadModule != NULL);
-				//DebugString ("SymLoad failed for module %s with code %d - %s\n", szModuleName, GetLastError(), Last_Error_Text());
-			}
-		}
-	}
+	Load_Symbols();
 }
-
-
-
-
-
-
 
 /***********************************************************************************************
  * Lookup_Symbol -- Get the symbol for a given code address                                    *
@@ -1203,12 +1273,12 @@ bool Lookup_Symbol(void *code_ptr, char *symbol, int &displacement)
 	symbol_struct_ptr->SizeOfStruct = sizeof (symbol_struct_buf);
 	symbol_struct_ptr->MaxNameLength = sizeof(symbol_struct_buf)-sizeof (IMAGEHLP_SYMBOL);
 	symbol_struct_ptr->Size = 0;
-	symbol_struct_ptr->Address = (unsigned long)code_ptr;
+	symbol_struct_ptr->Address = (uintptr_t)code_ptr;
 
 	/*
 	** See if we have the symbol for that address.
 	*/
-	if (_SymGetSymFromAddr(GetCurrentProcess(), (unsigned long)code_ptr, (unsigned long *)&displacement, symbol_struct_ptr)) {
+	if (_SymGetSymFromAddr(GetCurrentProcess(), (uintptr_t)code_ptr, (uintptr_t*)&displacement, symbol_struct_ptr)) {
 
 		/*
 		** Copy it back into the buffer provided.
@@ -1237,87 +1307,70 @@ bool Lookup_Symbol(void *code_ptr, char *symbol, int &displacement)
  *                                                                                             *
  * HISTORY:                                                                                    *
  *   6/12/2001 11:57AM ST : Created                                                            *
+ *   8/3/2025 CFE         : Made more compatible with x64. Removed asm.                        *
  *=============================================================================================*/
-int Stack_Walk(unsigned long *return_addresses, int num_addresses, CONTEXT *context)
+size_t Stack_Walk(const uintptr_t ip_in, const uintptr_t sp_in, const uintptr_t bp_in, const size_t skip_frames, std::span<uintptr_t> return_addresses)
 {
-	static HINSTANCE _imagehelp = (HINSTANCE) -1;
+	// Immediately early out if the return span is empty
+	if (return_addresses.empty())
+		return 0;
 
 	/*
 	** If this is the first time through then fix up the imagehelp function pointers since imagehlp.dll
 	** can't be statically linked.
 	*/
-	if (ImageHelp == (HINSTANCE)-1) {
-		Load_Image_Helper();
-	}
+	Load_Image_Helper();
 
 	/*
 	** If there is no debug support .dll available then we can't walk the stack.
 	*/
-	if (ImageHelp == NULL) {
-		return(0);
-	}
+	if (!DbgHelp || !_StackWalk)
+		return 0;
 
 	/*
 	** Set up the stack frame structure for the start point of the stack walk (i.e. here).
 	*/
-	STACKFRAME stack_frame;
-	memset(&stack_frame, 0, sizeof(stack_frame));
-
-	unsigned long reg_eip, reg_ebp, reg_esp;
-
-	__asm {
-here:
-		lea	eax,here
-		mov	reg_eip,eax
-		mov	reg_ebp,ebp
-		mov	reg_esp,esp
-	}
+	STACKFRAME stack_frame{};
 
 	stack_frame.AddrPC.Mode = AddrModeFlat;
-	stack_frame.AddrPC.Offset = reg_eip;
+	stack_frame.AddrPC.Offset = ip_in;
 	stack_frame.AddrStack.Mode = AddrModeFlat;
-	stack_frame.AddrStack.Offset = reg_esp;
+	stack_frame.AddrStack.Offset = sp_in;
 	stack_frame.AddrFrame.Mode = AddrModeFlat;
-	stack_frame.AddrFrame.Offset = reg_ebp;
-
-	/*
-	** Use the context struct if it was provided.
-	*/
-	if (context)
-	{
-#ifdef _WIN64
-		stack_frame.AddrPC.Offset = context->Rip;
-		stack_frame.AddrStack.Offset = context->Rsp;
-		stack_frame.AddrFrame.Offset = context->Rbp;
-#else
-		stack_frame.AddrPC.Offset = context->Eip;
-		stack_frame.AddrStack.Offset = context->Esp;
-		stack_frame.AddrFrame.Offset = context->Ebp;
-#endif //_WIN64
-	}
-
-	int pointer_index = 0;
+	stack_frame.AddrFrame.Offset = bp_in;
 
 	/*
 	** Walk the stack by the requested number of return address iterations.
 	*/
-	for (int i = 0; i < num_addresses + 1; i++) {
-		if (_StackWalk(IMAGE_FILE_MACHINE_I386, GetCurrentProcess(), GetCurrentThread(), &stack_frame, NULL, NULL, SymFunctionTableAccess, SymGetModuleBase, NULL)) {
+	const size_t max_addresses = return_addresses.size();
+	const HANDLE current_proc = GetCurrentProcess();
+	const HANDLE current_thread = GetCurrentThread();
 
-			/*
-			** First result will always be the return address we were called from.
-			*/
-			if (i==0 && context == NULL) {
-				continue;
-			}
-			unsigned long return_address = stack_frame.AddrReturn.Offset;
-			return_addresses[pointer_index++] = return_address;
-		} else {
+#ifdef _WIN64
+	const DWORD machine_type = IMAGE_FILE_MACHINE_AMD64;
+#else
+	const DWORD machine_type = IMAGE_FILE_MACHINE_I386;
+#endif
+
+	// Skip frames
+	for (size_t i = 0; i < skip_frames; ++i)
+	{
+		if (!_StackWalk(machine_type, current_proc, current_thread, &stack_frame, NULL, NULL, SymFunctionTableAccess, SymGetModuleBase, NULL))
 			break;
-		}
 	}
 
-	return(pointer_index);
+	// Read addresses
+	size_t pointer_index = 0;
+	while (pointer_index < max_addresses)
+	{
+		if (!_StackWalk(machine_type, current_proc, current_thread, &stack_frame, NULL, NULL, SymFunctionTableAccess, SymGetModuleBase, NULL))
+			break;
+		
+		uintptr_t return_address = stack_frame.AddrReturn.Offset;
+		return_addresses[pointer_index++] = return_address;
+	}
+
+	return pointer_index;
 }
 
 

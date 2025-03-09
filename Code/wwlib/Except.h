@@ -41,7 +41,9 @@
 
 #ifdef _MSC_VER
 
+#include <span>
 #include "win.h"
+
 /*
 ** Forward Declarations
 */
@@ -49,7 +51,7 @@ typedef struct _EXCEPTION_POINTERS EXCEPTION_POINTERS;
 typedef struct _CONTEXT CONTEXT;
 
 int Exception_Handler(int exception_code, EXCEPTION_POINTERS *e_info);
-int Stack_Walk(unsigned long *return_addresses, int num_addresses, CONTEXT *context = NULL);
+size_t Stack_Walk(uintptr_t ip_in, uintptr_t sp_in, uintptr_t bp_in, size_t skip_frames, std::span<uintptr_t> return_addresses);
 bool Lookup_Symbol(void *code_ptr, char *symbol, int &displacement);
 void Load_Image_Helper(void);
 void Register_Thread_ID(unsigned long thread_id, char *thread_name, bool main = false);

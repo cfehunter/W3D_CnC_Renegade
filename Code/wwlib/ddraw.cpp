@@ -82,7 +82,7 @@ void Set_Palette(PaletteClass const & pal, int time, void (*callback)())
 		*/
 		PaletteClass palette = original;
 		int adjust = ((time - timer) * 256) / time;
-		adjust = MIN(adjust, 255);
+		adjust = min(adjust, 255);
 		palette.Adjust(adjust, newpal);
 
 		/*

@@ -33,15 +33,11 @@
  *---------------------------------------------------------------------------------------------*
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
-#if _MSC_VER >= 1000
 #pragma once
-#endif // _MSC_VER >= 1000
 
 #ifndef ALWAYS_H
 #define ALWAYS_H
 
-// Disable warning about exception handling not being enabled. It's used as part of STL - in a part of STL we don't use.
-#pragma warning(disable : 4530)
 
 /*
 ** Define for debug memory allocation to include __FILE__ and __LINE__ for every memory allocation.
@@ -52,7 +48,7 @@
 #ifdef _MSC_VER
 #ifdef STEVES_NEW_CATCHER
 
-#include	<crtdbg.h>
+#include <crtdbg.h>
 #include <stdlib.h>
 #include <malloc.h>
 
@@ -130,25 +126,6 @@ template <class T> T max(T a,T b)
 		return b;
 	}
 }
-
-
-/*
-**	This includes the minimum set of compiler defines and pragmas in order to bring the
-**	various compilers to a common behavior such that the C&C engine will compile without
-**	error or warning.
-*/
-#if defined(__BORLANDC__)
-#include	"borlandc.h"
-#endif
-
-#if defined(_MSC_VER)
-#include	"visualc.h"
-#endif
-
-#if defined(__WATCOMC__)
-#include	"watcom.h"
-#endif
-
 
 #ifndef	NULL
 	#define	NULL		0

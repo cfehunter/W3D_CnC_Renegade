@@ -377,7 +377,7 @@ Sound3DHandleClass::Set_Sample_Playback_Rate (S32 rate)
 //
 //////////////////////////////////////////////////////////////////////
 void
-Sound3DHandleClass::Set_Miles_Handle (uint32 handle)
+Sound3DHandleClass::Set_Miles_Handle (uintptr_t handle)
 {
 	WWASSERT (SampleHandle == (H3DSAMPLE)INVALID_MILES_HANDLE);
 

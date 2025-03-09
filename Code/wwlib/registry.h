@@ -115,8 +115,8 @@ private:
 	static void Save_Registry_Values(HKEY key, char *path, INIClass *ini);
 
 
-	int	Key;
-	bool	IsValid;
+	uintptr_t Key;
+	bool      IsValid;
 
 	//
 	// Use this to make the registry 'read only'. Useful for running multiple copies of the app.

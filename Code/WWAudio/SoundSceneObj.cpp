@@ -284,6 +284,7 @@ bool
 SoundSceneObjClass::Load (ChunkLoadClass &cload)
 {
 	uint32 id = SOUND_OBJ_DEFAULT_ID;
+	uint32 old_attached_object = 0u;
 
 	while (cload.Open_Chunk ()) {		
 		switch (cload.Cur_Chunk_ID ()) {
@@ -300,7 +301,7 @@ SoundSceneObjClass::Load (ChunkLoadClass &cload)
 				while (cload.Open_Micro_Chunk ()) {
 					switch (cload.Cur_Micro_Chunk_ID ()) {
 
-						READ_MICRO_CHUNK (cload, VARID_ATTACHED_OBJ, m_AttachedObject);
+						READ_MICRO_CHUNK (cload, VARID_ATTACHED_OBJ, old_attached_object);
 						READ_MICRO_CHUNK (cload, VARID_ATTACHED_BONE, m_AttachedBone);
 						READ_MICRO_CHUNK (cload, VARID_USER_DATA, m_UserData);
 						READ_MICRO_CHUNK (cload, VARID_USER_OBJ, m_UserObj);
@@ -334,7 +335,7 @@ SoundSceneObjClass::Load (ChunkLoadClass &cload)
 	// value, and need to map it (hopefully) to the new value.
 	//
 	if (m_AttachedObject != NULL) {
-		SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap ((RefCountClass **)&m_AttachedObject);
+		REQUEST_REF_COUNTED_POINTER_REMAP(old_attached_object, (RefCountClass **)&m_AttachedObject);
 	}
 	
 	return true;

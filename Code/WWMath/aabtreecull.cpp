@@ -1329,9 +1329,10 @@ void AABTreeNodeClass::Select_Splitting_Plane
 	/*
 	** Try putting axis-aligned planes through some random vertices
 	*/
-	int objcount = boxes.Count();	
+	const int objcount = boxes.Count();
+	const int max_trys = min(NUM_TRYS, objcount);
 	int trys = 0;
-	for (trys = 0; trys < MIN(NUM_TRYS,objcount); trys++) {
+	for (trys = 0; trys < max_trys; trys++) {
 
 		int obj_index;
 		SplitChoiceStruct test;
@@ -1368,7 +1369,7 @@ void AABTreeNodeClass::Select_Splitting_Plane
 	/*
 	** Still haven't found a valid splitting plane, uh-oh.
 	*/
-	if ((trys >= MIN(NUM_TRYS,objcount)) && (sc->Cost == FLT_MAX)) {
+	if (trys >= max_trys && (sc->Cost == FLT_MAX)) {
 		Select_Splitting_Plane_Brute_Force(sc,boxes);
 		return;
 	}

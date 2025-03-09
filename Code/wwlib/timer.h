@@ -204,6 +204,10 @@ inline int BasicTimerClass<T>::operator () (void) const
 template<class T>
 class TTimerClass : public BasicTimerClass<T> {
  	public:
+		//#CFE_TODO: Find out why these names are colliding
+		using BasicTimerClass<T>::Started;
+		using BasicTimerClass<T>::Timer;
+
 		// Constructor allows assignment as if class was integral 'long' type.
 		TTimerClass(int set=0);
 		TTimerClass(NoInitClass const & x);
@@ -429,6 +433,10 @@ inline bool TTimerClass<T>::Is_Active(void) const
 template<class T>
 class CDTimerClass : public BasicTimerClass<T> {
 	public:
+		//#CFE_TODO: Figure out why these names collide
+		using BasicTimerClass<T>::Timer;
+		using BasicTimerClass<T>::Started;
+
 		// Constructor allows assignment as if class was integral 'long' type.
 		CDTimerClass(int set=0);
 		CDTimerClass(NoInitClass const & x);
