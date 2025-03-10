@@ -338,11 +338,11 @@ bool ScriptManager::Save(ChunkSaveClass& csave)
 		WRITE_MICRO_CHUNK_STRING(csave, MICROCHUNKID_PARAM, paramString);
 
 		GameObjObserverClass* game_obj_observer_ptr = (GameObjObserverClass*)script;
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_GAME_OBJ_OBSERVER_PTR, game_obj_observer_ptr );
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_GAME_OBJ_OBSERVER_PTR, game_obj_observer_ptr );
 
 		ScriptableGameObj* owner_ptr = *(script->Get_Owner_Ptr());
 //		Debug_Say(("\tObjectPtr: '%p'\n", *owner_ptr));
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_OWNER_PTR, owner_ptr );
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_OWNER_PTR, owner_ptr );
 
 		int id = script->Get_ID();
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_ID, id );
@@ -370,8 +370,8 @@ bool	ScriptManager::Load( ChunkLoadClass & cload )
 
 	while (cload.Open_Chunk()) {
 
-		GameObjObserverClass * game_obj_observer_ptr = NULL;
-		PhysicalGameObj * owner_ptr = NULL;
+		uint32 old_game_obj_observer_ptr = 0;
+		uint32 old_owner_ptr = 0;
 
 		WWASSERT( cload.Cur_Chunk_ID() == CHUNKID_SCRIPT_ENTRY );
 
@@ -412,8 +412,8 @@ bool	ScriptManager::Load( ChunkLoadClass & cload )
 					break;
 				}
 
-				READ_MICRO_CHUNK( cload, MICROCHUNKID_GAME_OBJ_OBSERVER_PTR, game_obj_observer_ptr );
-				READ_MICRO_CHUNK( cload, MICROCHUNKID_OWNER_PTR, owner_ptr );
+				READ_MICRO_CHUNK( cload, MICROCHUNKID_GAME_OBJ_OBSERVER_PTR, old_game_obj_observer_ptr);
+				READ_MICRO_CHUNK( cload, MICROCHUNKID_OWNER_PTR, old_owner_ptr );
 
 				READ_MICRO_CHUNK( cload, MICROCHUNKID_ID, obs_id );
 
@@ -440,16 +440,16 @@ bool	ScriptManager::Load( ChunkLoadClass & cload )
 				cload.Close_Chunk();
 			}
 
-			WWASSERT( game_obj_observer_ptr != NULL );
-			if ( game_obj_observer_ptr != NULL ) {
-				SaveLoadSystemClass::Register_Pointer(game_obj_observer_ptr, (GameObjObserverClass *)script);
+			WWASSERT(old_game_obj_observer_ptr);
+			if (old_game_obj_observer_ptr) {
+				SaveLoadSystemClass::Register_Pointer(old_game_obj_observer_ptr, (GameObjObserverClass *)script);
 			}
 
 			// set the owner, and request remap
-			*(script->Get_Owner_Ptr()) = owner_ptr;
-			REQUEST_POINTER_REMAP( (void **)script->Get_Owner_Ptr() );
+			*(script->Get_Owner_Ptr()) = nullptr;
+			REQUEST_POINTER_REMAP(old_owner_ptr, (void **)script->Get_Owner_Ptr() );
 		} else {
-			SaveLoadSystemClass::Register_Pointer(game_obj_observer_ptr, (GameObjObserverClass *)NULL);
+			SaveLoadSystemClass::Register_Pointer(old_game_obj_observer_ptr, (GameObjObserverClass *)NULL);
 		}
 
 

@@ -1597,7 +1597,9 @@ void	Save_Data( ScriptSaver & saver, int id, int size, void * data )
 void Save_Pointer(ScriptSaver& saver, int id, void* pointer)
 {
 	SCRIPT_PTR_CHECK(pointer);
-	Save_Data(saver, id, sizeof(pointer), pointer);
+
+	uint32 old_ptr = SaveLoadSystemClass::Convert_Pointer(pointer);
+	Save_Data(saver, id, sizeof(old_ptr), &old_ptr);
 }
 
 
@@ -1624,8 +1626,9 @@ void	Load_Data( ScriptLoader & loader, int size, void * data )
 void Load_Pointer(ScriptLoader& loader, void** pointer)
 {
 	SCRIPT_PTR_CHECK(pointer);
-	Load_Data(loader, sizeof(void*), pointer);
-	REQUEST_POINTER_REMAP(pointer);
+	uint32 old_ptr_id = 0;
+	Load_Data(loader, sizeof(old_ptr_id), &old_ptr_id);
+	REQUEST_POINTER_REMAP(old_ptr_id, pointer);
 }
 
 
@@ -3054,7 +3057,7 @@ void	Cinematic_Sniper_Control(bool enabled, float zoom)
 /*
 **
 */
-int	Text_File_Open( const char * filename )
+uintptr Text_File_Open( const char * filename )
 {
 	FileClass * file = _TheFileFactory->Get_File( filename );
 	if ( file ) {
@@ -3064,10 +3067,10 @@ int	Text_File_Open( const char * filename )
 			file = NULL;
 		}
 	}
-	return (int)( file );
+	return (uintptr)file;
 }
 
-bool	Text_File_Get_String( int handle, char * buffer, int size )
+bool	Text_File_Get_String(uintptr handle, char * buffer, int size )
 {
 	FileClass * file = (FileClass *)handle;
 	char ch[4];
@@ -3085,7 +3088,7 @@ bool	Text_File_Get_String( int handle, char * buffer, int size )
 	return (buffer[0] != 0);
 }
 
-void	Text_File_Close( int handle )
+void	Text_File_Close( uintptr handle )
 {
 	FileClass * file = (FileClass *)handle;
 	if ( file != NULL ) {

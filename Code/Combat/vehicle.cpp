@@ -571,7 +571,11 @@ bool	VehicleGameObj::Save( ChunkSaveClass & csave )
 
 	if ( num_seats != 0 ) {
 		csave.Begin_Chunk( CHUNKID_SEAT_LIST );
-		csave.Write( &SeatOccupants[0], num_seats * sizeof( SeatOccupants[0] ) );
+		for (int i = 0; i < num_seats; ++i)
+		{
+			const uint32 occupant_id = SaveLoadSystemClass::Convert_Pointer(SeatOccupants[i]);
+			csave.Write(&occupant_id, sizeof(occupant_id));
+		}
 		csave.End_Chunk();
 	}
 
@@ -622,10 +626,11 @@ bool	VehicleGameObj::Load( ChunkLoadClass &cload )
 				}
 
 				SeatOccupants.Resize( num_seats );
-				cload.Read( &SeatOccupants[0], num_seats * sizeof( SeatOccupants[0] ) );
 				for ( int i = 0; i < num_seats; i++ ) {
-					if ( SeatOccupants[i] != NULL ) {
-						REQUEST_POINTER_REMAP( (void **)&SeatOccupants[i] );
+					uint32 occupant_id = 0;
+					cload.Read(&occupant_id, sizeof(occupant_id));
+					if (occupant_id) {
+						REQUEST_POINTER_REMAP(occupant_id, (void **)&SeatOccupants[i] );
 					}
 				}
 				break;
@@ -1419,7 +1424,7 @@ void VehicleGameObj::Apply_Control( void )
 	SmartGameObj::Apply_Control();
 }
 
-static char * _profile_name = "Vehicle Think";
+static constexpr const char * _profile_name = "Vehicle Think";
 
 void	VehicleGameObj::Think( void )
 {
@@ -1452,7 +1457,7 @@ void	VehicleGameObj::Think( void )
 }
 }
 
-static char * _post_profile_name = "Vehicle PostThink";
+static constexpr const char * _post_profile_name = "Vehicle PostThink";
 
 void	VehicleGameObj::Post_Think( void )
 {

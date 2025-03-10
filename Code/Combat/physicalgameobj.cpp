@@ -437,15 +437,15 @@ bool	PhysicalGameObj::Save( ChunkSaveClass & csave )
 
 	csave.Begin_Chunk( CHUNKID_VARIABLES );
 		CombatPhysObserverClass * phys_observer_ptr = (CombatPhysObserverClass *)this;
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_PHYS_OBSERVER_PTR, phys_observer_ptr );
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_PHYSICAL_OBJECT, PhysObj );
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_PHYS_OBSERVER_PTR, phys_observer_ptr );
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_PHYSICAL_OBJECT, PhysObj );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_HIBERNATION_TIMER, HibernationTimer );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_HIBERNATION_ENABLE, HibernationEnable );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_HOST_GAME_OBJ_BONE, HostGameObjBone );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_RADAR_BLIP_SHAPE_TYPE, RadarBlipShapeType );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_RADAR_BLIP_COLOR_TYPE, RadarBlipColorType );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_RADAR_BLIP_INTENSITY, RadarBlipIntensity );
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_ACTIVE_CONVERSATION, ActiveConversation );
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_ACTIVE_CONVERSATION, ActiveConversation );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_HUD_POKABLE_INDICATOR, HUDPokableIndicatorEnabled );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_IS_INNATE_CONVERSATIONS_ENABLED, IsInnateConversationsEnabled );
 
@@ -483,7 +483,9 @@ bool	PhysicalGameObj::Save( ChunkSaveClass & csave )
 bool	PhysicalGameObj::Load( ChunkLoadClass &cload )
 {
 	WWASSERT( PhysObj == NULL );		// May need to change to release???
-	CombatPhysObserverClass * phys_observer_ptr = NULL;
+	uint32 phys_observer_ptr = 0;
+	uint32 old_phys_obj = 0;
+	uint32 old_active_conversation = 0;
 
 	while (cload.Open_Chunk()) {
 		switch(cload.Cur_Chunk_ID()) {
@@ -501,14 +503,14 @@ bool	PhysicalGameObj::Load( ChunkLoadClass &cload )
 					switch(cload.Cur_Micro_Chunk_ID()) {
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_PHYS_OBSERVER_PTR, phys_observer_ptr );
 						READ_MICRO_CHUNK( cload, LEGACY_MICROCHUNKID_PLAYER_TYPE, PlayerType );
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_PHYSICAL_OBJECT, PhysObj );
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_PHYSICAL_OBJECT, old_phys_obj);
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_HIBERNATION_TIMER, HibernationTimer );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_HIBERNATION_ENABLE, HibernationEnable );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_HOST_GAME_OBJ_BONE, HostGameObjBone );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_RADAR_BLIP_SHAPE_TYPE, RadarBlipShapeType );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_RADAR_BLIP_COLOR_TYPE, RadarBlipColorType );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_RADAR_BLIP_INTENSITY, RadarBlipIntensity );
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_ACTIVE_CONVERSATION, ActiveConversation );
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_ACTIVE_CONVERSATION, old_active_conversation);
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_HUD_POKABLE_INDICATOR, HUDPokableIndicatorEnabled );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_IS_INNATE_CONVERSATIONS_ENABLED, IsInnateConversationsEnabled );
 
@@ -544,16 +546,16 @@ bool	PhysicalGameObj::Load( ChunkLoadClass &cload )
 		cload.Close_Chunk();
 	}
 
-	WWASSERT( PhysObj != NULL );		
-	REQUEST_REF_COUNTED_POINTER_REMAP( (RefCountClass **)&PhysObj );
+	WWASSERT(old_phys_obj);
+	REQUEST_REF_COUNTED_POINTER_REMAP(old_phys_obj, (RefCountClass **)&PhysObj );
 
-	if ( ActiveConversation != NULL ) {
-		REQUEST_REF_COUNTED_POINTER_REMAP( (RefCountClass **)&ActiveConversation );
+	if (old_active_conversation) {
+		REQUEST_REF_COUNTED_POINTER_REMAP(old_active_conversation, (RefCountClass **)&ActiveConversation );
 	}
 
 	// Register the multiple-inheritance versions of our this pointer.
-	WWASSERT(phys_observer_ptr != NULL);
-	if (phys_observer_ptr != NULL) {
+	WWASSERT(phys_observer_ptr);
+	if (phys_observer_ptr) {
 		SaveLoadSystemClass::Register_Pointer(phys_observer_ptr, (CombatPhysObserverClass *)this);
 	}
 

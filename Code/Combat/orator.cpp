@@ -194,7 +194,7 @@ OratorClass::Save (ChunkSaveClass &csave)
 	csave.Begin_Chunk (CHUNKID_VARIABLES);
 
 		WRITE_MICRO_CHUNK (csave, VARID_ID,					ID);
-		WRITE_MICRO_CHUNK (csave, VARID_CONVERSATION,	Conversation);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_CONVERSATION,	Conversation);
 		WRITE_MICRO_CHUNK (csave, VARID_POSITION,			Position);
 		WRITE_MICRO_CHUNK (csave, VARID_HASARRIVED,		HasArrived);
 		WRITE_MICRO_CHUNK (csave, VARID_FLAGS,				Flags);
@@ -206,7 +206,7 @@ OratorClass::Save (ChunkSaveClass &csave)
 		//	Save our current pointer so we can remap it on load
 		//
 		OratorClass *old_ptr = this;
-		WRITE_MICRO_CHUNK (csave, VARID_OLD_PTR, old_ptr);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_OLD_PTR, old_ptr);
 
 	csave.End_Chunk ();
 
@@ -253,7 +253,8 @@ OratorClass::Load (ChunkLoadClass &cload)
 void
 OratorClass::Load_Variables (ChunkLoadClass &cload)
 {
-	OratorClass *old_ptr = NULL;
+	uint32 old_ptr = 0;
+	uint32 old_conversation = 0;
 
 	//
 	//	Loop through all the microchunks that define the variables
@@ -262,7 +263,7 @@ OratorClass::Load_Variables (ChunkLoadClass &cload)
 		switch (cload.Cur_Micro_Chunk_ID ()) {
 
 			READ_MICRO_CHUNK (cload, VARID_ID,					ID);
-			READ_MICRO_CHUNK (cload, VARID_CONVERSATION,		Conversation);
+			READ_MICRO_CHUNK (cload, VARID_CONVERSATION,		old_conversation);
 			READ_MICRO_CHUNK (cload, VARID_POSITION,			Position);
 			READ_MICRO_CHUNK (cload, VARID_HASARRIVED,		HasArrived);
 			READ_MICRO_CHUNK (cload, VARID_FLAGS,				Flags);
@@ -278,15 +279,14 @@ OratorClass::Load_Variables (ChunkLoadClass &cload)
 	//
 	//	Fixup the pointer
 	//
-	if (Conversation != NULL) {
-		REQUEST_REF_COUNTED_POINTER_REMAP ((RefCountClass **)&Conversation);
-
+	if (old_conversation) {
+		REQUEST_REF_COUNTED_POINTER_REMAP (old_conversation, (RefCountClass **)&Conversation);
 	}
 
 	//
 	//	Register our old pointer so other objects can safely remap to it
 	//
-	WWASSERT (old_ptr != NULL);
+	WWASSERT (old_ptr);
 	SaveLoadSystemClass::Register_Pointer (old_ptr, this);
 	return ;
 }

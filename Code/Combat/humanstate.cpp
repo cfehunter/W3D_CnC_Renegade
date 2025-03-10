@@ -184,15 +184,15 @@ enum	{
 bool	HumanStateClass::Save( ChunkSaveClass & csave )
 {
 	csave.Begin_Chunk( CHUNKID_VARIABLES );
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_STATE, State );         		
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_STATE_FLAGS, StateFlags );         		
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_SUB_STATE, SubState );      
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_STATE_LOCKED, StateLocked );   
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_WEAPON_HOLD_STYLE, WeaponHoldStyle );   
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_AIMING_TILT, AimingTilt );    
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_AIMING_TURN, AimingTurn );    
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_TURN_VELOCITY, TurnVelocity );  
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_PHYSOBJ,	HumanPhys );
+		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_STATE, State );
+		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_STATE_FLAGS, StateFlags );
+		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_SUB_STATE, SubState );
+		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_STATE_LOCKED, StateLocked );
+		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_WEAPON_HOLD_STYLE, WeaponHoldStyle );
+		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_AIMING_TILT, AimingTilt );
+		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_AIMING_TURN, AimingTurn );
+		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_TURN_VELOCITY, TurnVelocity );
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_PHYSOBJ,	HumanPhys );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_LOITER_DELAY,	LoiterDelay );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_LOITERS_ALLOWED,	LoitersAllowed );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_JUMP_TM,	JumpTM );
@@ -220,6 +220,7 @@ bool	HumanStateClass::Load( ChunkLoadClass &cload )
 {
 	int human_anim_override_def_id = 0;
 	int human_loiter_collection_def_id = 0;
+	uint32 old_human_phys = 0;
 
 	WWASSERT( HumanPhys == NULL );
 	
@@ -242,7 +243,7 @@ bool	HumanStateClass::Load( ChunkLoadClass &cload )
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_AIMING_TILT, AimingTilt );    
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_AIMING_TURN, AimingTurn );    
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_TURN_VELOCITY, TurnVelocity );  
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_PHYSOBJ,	HumanPhys );
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_PHYSOBJ, old_human_phys);
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_LOITER_DELAY,	LoiterDelay );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_LOITERS_ALLOWED,	LoitersAllowed );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_JUMP_TM,	JumpTM );
@@ -258,10 +259,9 @@ bool	HumanStateClass::Load( ChunkLoadClass &cload )
 					cload.Close_Micro_Chunk();
 				}
 
-				WWASSERT( HumanPhys != NULL );
-
-				if ( HumanPhys != NULL ) {
-					REQUEST_REF_COUNTED_POINTER_REMAP( (RefCountClass **)&HumanPhys );
+				WWASSERT(old_human_phys);
+				if (old_human_phys) {
+					REQUEST_REF_COUNTED_POINTER_REMAP(old_human_phys, (RefCountClass **)&HumanPhys);
 				}
 
 				break;

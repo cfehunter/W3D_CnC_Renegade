@@ -69,7 +69,7 @@ bool	PersistentGameObjObserverClass::Save( ChunkSaveClass & csave )
 
 	csave.Begin_Chunk( CHUNKID_VARIABLES );
 		void * observer_ptr = (GameObjObserverClass*)this;
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_OBSERVER_PTR, observer_ptr );
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_OBSERVER_PTR, observer_ptr);
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_OBSERVER_ID, ID );
 	csave.End_Chunk();
 
@@ -78,7 +78,7 @@ bool	PersistentGameObjObserverClass::Save( ChunkSaveClass & csave )
 
 bool	PersistentGameObjObserverClass::Load( ChunkLoadClass &cload )
 {
-	void * old_observer_ptr = NULL;
+	uint32 old_observer_ptr = 0;
 
 	while (cload.Open_Chunk()) {
 		switch(cload.Cur_Chunk_ID()) {
@@ -109,8 +109,8 @@ bool	PersistentGameObjObserverClass::Load( ChunkLoadClass &cload )
 		cload.Close_Chunk();
 	}
 
-	WWASSERT( old_observer_ptr != NULL );
-	if ( old_observer_ptr != NULL ) {
+	WWASSERT(old_observer_ptr);
+	if (old_observer_ptr) {
 		SaveLoadSystemClass::Register_Pointer( old_observer_ptr, (GameObjObserverClass*)this );
 	}
 

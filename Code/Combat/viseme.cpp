@@ -16,8 +16,9 @@
 **	along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <string.h>
-#include <stdlib.h>
+#include <cctype>
+#include <cstring>
+#include <cstdlib>
 #include <wwdebug.h>
 #include "Viseme.h"
 
@@ -26,7 +27,7 @@
 
 struct VisemeTableItem
 {
-	char	*LetterCombination;
+	const char	*LetterCombination;
 	char	Visemes[2];
 };
 

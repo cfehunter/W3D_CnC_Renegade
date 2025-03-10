@@ -167,7 +167,7 @@ bool	WeaponViewClass::Save( ChunkSaveClass &csave )
 	csave.Begin_Chunk( CHUNKID_VARIABLES );
 		// If the scene has our hands, we must save and swizzle them
 		if ( HandsPhysObj != NULL && COMBAT_SCENE->Contains( HandsPhysObj ) ) {
-			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_HANDS_PHYS_OBJ, HandsPhysObj );
+			WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_HANDS_PHYS_OBJ, HandsPhysObj );
 		}
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_ENABLED, WeaponViewEnabled );
 	csave.End_Chunk();
@@ -179,6 +179,8 @@ bool	WeaponViewClass::Load( ChunkLoadClass &cload )
 	Release_Weapon_Assets();
 	Release_Hands_Assets();
 
+	uint32 old_hand_phys_obj = 0;
+
 	while (cload.Open_Chunk()) {
 		switch(cload.Cur_Chunk_ID()) {
 
@@ -186,7 +188,7 @@ bool	WeaponViewClass::Load( ChunkLoadClass &cload )
 			{
 				while (cload.Open_Micro_Chunk()) {
 					switch(cload.Cur_Micro_Chunk_ID()) {
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_HANDS_PHYS_OBJ, HandsPhysObj );
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_HANDS_PHYS_OBJ, old_hand_phys_obj );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_ENABLED, WeaponViewEnabled );
 
 						default:
@@ -207,8 +209,8 @@ bool	WeaponViewClass::Load( ChunkLoadClass &cload )
 		cload.Close_Chunk();
 	}
 
-	if ( HandsPhysObj != NULL ) {
-		REQUEST_REF_COUNTED_POINTER_REMAP ((RefCountClass **)&HandsPhysObj);
+	if (old_hand_phys_obj) {
+		REQUEST_REF_COUNTED_POINTER_REMAP (old_hand_phys_obj, (RefCountClass **)&HandsPhysObj);
 	}
 
 	return true;

@@ -875,13 +875,13 @@ VehicleDriverClass::Save (ChunkSaveClass &csave)
 		WRITE_MICRO_CHUNK (csave, VARID_FINAL_DEST,				m_FinalDest);
 		WRITE_MICRO_CHUNK (csave, VARID_MAX_SPEED,				m_MaxSpeed);
 		WRITE_MICRO_CHUNK (csave, VARID_SPEED_FACTOR,			m_SpeedFactor);
-		WRITE_MICRO_CHUNK (csave, VARID_LAST_POS,					m_LastPos);
-		WRITE_MICRO_CHUNK (csave, VARID_BAD_PROGRESS_COUNT,	m_BadProgressCount);
+		WRITE_MICRO_CHUNK (csave, VARID_LAST_POS,				m_LastPos);
+		WRITE_MICRO_CHUNK (csave, VARID_BAD_PROGRESS_COUNT,		m_BadProgressCount);
 		WRITE_MICRO_CHUNK (csave, VARID_IS_BACKING_UP,			m_IsBackingUp);
 		WRITE_MICRO_CHUNK (csave, VARID_IS_BACKUP_LOCKED,		m_IsBackupLocked);
 		WRITE_MICRO_CHUNK (csave, VARID_TURN_OFF_ENGINE,		m_TurnOffEngineWhenDone);
-		WRITE_MICRO_CHUNK (csave, VARID_PATH_PTR,					m_CurrentPath);
-		WRITE_MICRO_CHUNK (csave, VARID_GAME_OBJ_PTR,			m_GameObj);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_PATH_PTR,			m_CurrentPath);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_GAME_OBJ_PTR,		m_GameObj);
 		WRITE_MICRO_CHUNK (csave, VARID_ARRIVED_DIST,			m_ArrivedDist);
 
 	csave.End_Chunk ();
@@ -920,6 +920,9 @@ VehicleDriverClass::Load (ChunkLoadClass &cload)
 void
 VehicleDriverClass::Load_Variables (ChunkLoadClass &cload)
 {
+	uint32 old_path_ptr = 0;
+	uint32 old_game_obj_ptr = 0;
+
 	//
 	//	Loop through all the microchunks that define the variables
 	//
@@ -935,8 +938,8 @@ VehicleDriverClass::Load_Variables (ChunkLoadClass &cload)
 			READ_MICRO_CHUNK (cload, VARID_IS_BACKING_UP,		m_IsBackingUp);
 			READ_MICRO_CHUNK (cload, VARID_IS_BACKUP_LOCKED,	m_IsBackupLocked);
 			READ_MICRO_CHUNK (cload, VARID_TURN_OFF_ENGINE,		m_TurnOffEngineWhenDone);
-			READ_MICRO_CHUNK (cload, VARID_PATH_PTR,				m_CurrentPath);
-			READ_MICRO_CHUNK (cload, VARID_GAME_OBJ_PTR,			m_GameObj);
+			READ_MICRO_CHUNK (cload, VARID_PATH_PTR,				old_path_ptr);
+			READ_MICRO_CHUNK (cload, VARID_GAME_OBJ_PTR,			old_game_obj_ptr);
 			READ_MICRO_CHUNK (cload, VARID_ARRIVED_DIST,			m_ArrivedDist);
 		}
 
@@ -946,15 +949,15 @@ VehicleDriverClass::Load_Variables (ChunkLoadClass &cload)
 	//
 	//	Request that the game object ptr gets remapped
 	//
-	if (m_GameObj != NULL) {
-		REQUEST_POINTER_REMAP ((void **)&m_GameObj);
+	if (old_game_obj_ptr) {
+		REQUEST_POINTER_REMAP (old_game_obj_ptr, (void **)&m_GameObj);
 	}
 
 	//
 	//	Request that the path ptr gets remapped
 	//
-	if (m_CurrentPath != NULL) {
-		REQUEST_REF_COUNTED_POINTER_REMAP ((RefCountClass **)&m_CurrentPath);
+	if (old_path_ptr) {
+		REQUEST_REF_COUNTED_POINTER_REMAP (old_path_ptr, (RefCountClass **)&m_CurrentPath);
 	}
 
 	return ;

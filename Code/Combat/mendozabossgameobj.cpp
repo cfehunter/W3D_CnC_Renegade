@@ -713,7 +713,7 @@ void
 MendozaBossGameObjClass::Save_Variables (ChunkSaveClass &csave)
 {
 	Matrix3D cam_tm = CameraBoneModel->Get_Transform ();
-	WRITE_MICRO_CHUNK (csave, VARID_CAMERA_BONE_PTR,					CameraBoneModel);
+	WRITE_PTR_MICRO_CHUNK (csave, VARID_CAMERA_BONE_PTR,				CameraBoneModel);
 	WRITE_MICRO_CHUNK (csave, VARID_CAMERA_BONE_TM,						cam_tm);
 
 	WRITE_MICRO_CHUNK (csave, VARID_OVERALLSTATE_TIMER,				OverallStateTimer);
@@ -745,7 +745,7 @@ MendozaBossGameObjClass::Save_Variables (ChunkSaveClass &csave)
 void
 MendozaBossGameObjClass::Load_Variables (ChunkLoadClass &cload)
 {
-	RenderObjClass *old_camera_bone_ptr = NULL;
+	uint32 old_camera_bone_ptr = 0;
 	Matrix3D cam_tm (1);
 
 	while (cload.Open_Micro_Chunk ()) {
@@ -783,7 +783,7 @@ MendozaBossGameObjClass::Load_Variables (ChunkLoadClass &cload)
 	//
 	//	Register the camera bone pointers...
 	//
-	if (old_camera_bone_ptr != NULL) {			
+	if (old_camera_bone_ptr) {
 		SaveLoadSystemClass::Register_Pointer (old_camera_bone_ptr, CameraBoneModel);
 		CameraBoneModel->Set_Transform (cam_tm);
 	}

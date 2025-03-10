@@ -211,14 +211,14 @@ bool	CoverEntryClass::Save( ChunkSaveClass & csave )
 	CoverEntryClass * me = this;
 
 	csave.Begin_Chunk( CHUNKID_VARIABLES );
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_TRANSFORM,     Transform );				
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_CROUCH,        Crouch );				
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_IN_USE,        InUse );				
+		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_TRANSFORM,     Transform );
+		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_CROUCH,        Crouch );
+		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_IN_USE,        InUse );
 		for ( int i = 0; i < AttackPositionList.Count(); i++ ) {
 			Vector3 pos = AttackPositionList[i];
-			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_ATTACK_POSITION,     pos );				
+			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_ATTACK_POSITION,     pos );
 		}
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_REMAP_PTR,     me );				
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_REMAP_PTR,     me );
 	csave.End_Chunk();
 
 	return true;
@@ -228,7 +228,7 @@ bool	CoverEntryClass::Load( ChunkLoadClass & cload )
 {
 	WWASSERT( AttackPositionList.Count() == 0 );
 
-	CoverEntryClass * old_me = NULL;
+	uint32 old_me = 0;
 
 	while (cload.Open_Chunk()) {
 		switch(cload.Cur_Chunk_ID()) {
@@ -237,9 +237,9 @@ bool	CoverEntryClass::Load( ChunkLoadClass & cload )
 				while (cload.Open_Micro_Chunk()) {
 					switch(cload.Cur_Micro_Chunk_ID()) {
 
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_TRANSFORM,     Transform );				
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_CROUCH,        Crouch );				
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_IN_USE,        InUse );				
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_TRANSFORM,     Transform );
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_CROUCH,        Crouch );
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_IN_USE,        InUse );
 
 						case MICROCHUNKID_ATTACK_POSITION:
 						{
@@ -249,7 +249,7 @@ bool	CoverEntryClass::Load( ChunkLoadClass & cload )
 							break;
 						}
 
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_REMAP_PTR,     old_me );				
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_REMAP_PTR,     old_me );
 
 						default:
 							Debug_Say(( "Unrecognized CoverEntry Variable chunkID %d\n", cload.Cur_Micro_Chunk_ID() ));
@@ -269,8 +269,8 @@ bool	CoverEntryClass::Load( ChunkLoadClass & cload )
 	}
 
 	// publish my remap pair
-	WWASSERT(old_me != NULL);
-	if (old_me != NULL) {
+	WWASSERT(old_me);
+	if (old_me) {
 		SaveLoadSystemClass::Register_Pointer( old_me, this );
 	}
 

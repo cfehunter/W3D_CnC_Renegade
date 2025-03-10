@@ -583,11 +583,11 @@ PathActionClass::Save (ChunkSaveClass &csave)
 		WRITE_MICRO_CHUNK (csave, VARID_DOOR_STATE,		DoorState);
 		WRITE_MICRO_CHUNK (csave, VARID_STATE,				State);
 		WRITE_MICRO_CHUNK (csave, VARID_TYPE,				Type);
-		WRITE_MICRO_CHUNK (csave, VARID_PATH_PTR,			Path);
-		WRITE_MICRO_CHUNK (csave, VARID_MECHANISM_PTR,	Mechanism);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_PATH_PTR,			Path);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_MECHANISM_PTR,	Mechanism);
 		WRITE_MICRO_CHUNK (csave, VARID_DESTINATION,		Destination);
 		WRITE_MICRO_CHUNK (csave, VARID_FACEPOS,			FacePos);
-		WRITE_MICRO_CHUNK (csave, VARID_GAME_OBJ_PTR,	GameObj);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_GAME_OBJ_PTR,	GameObj);
 		WRITE_MICRO_CHUNK (csave, VARID_LADDER_STATE,	LadderState);
 		WRITE_MICRO_CHUNK (csave, VARID_LADDER_INDEX,	LadderIndex);
 
@@ -628,6 +628,10 @@ PathActionClass::Load (ChunkLoadClass &cload)
 void
 PathActionClass::Load_Variables (ChunkLoadClass &cload)
 {
+	uint32 old_path = 0;
+	uint32 old_mechanism = 0;
+	uint32 old_gameobj = 0;
+
 	//
 	//	Loop through all the microchunks that define the variables
 	//
@@ -638,11 +642,11 @@ PathActionClass::Load_Variables (ChunkLoadClass &cload)
 			READ_MICRO_CHUNK (cload, VARID_DOOR_STATE,		DoorState);
 			READ_MICRO_CHUNK (cload, VARID_STATE,				State);
 			READ_MICRO_CHUNK (cload, VARID_TYPE,				Type);
-			READ_MICRO_CHUNK (cload, VARID_PATH_PTR,			Path);
-			READ_MICRO_CHUNK (cload, VARID_MECHANISM_PTR,	Mechanism);
+			READ_MICRO_CHUNK (cload, VARID_PATH_PTR,			old_path);
+			READ_MICRO_CHUNK (cload, VARID_MECHANISM_PTR,	old_mechanism);
 			READ_MICRO_CHUNK (cload, VARID_DESTINATION,		Destination);
 			READ_MICRO_CHUNK (cload, VARID_FACEPOS,			FacePos);
-			READ_MICRO_CHUNK (cload, VARID_GAME_OBJ_PTR,		GameObj);
+			READ_MICRO_CHUNK (cload, VARID_GAME_OBJ_PTR,		old_gameobj);
 			READ_MICRO_CHUNK (cload, VARID_LADDER_STATE,		LadderState);
 			READ_MICRO_CHUNK (cload, VARID_LADDER_INDEX,		LadderIndex);
 		}
@@ -653,22 +657,22 @@ PathActionClass::Load_Variables (ChunkLoadClass &cload)
 	//
 	//	Request that the mechanism ptr gets remapped
 	//
-	if (GameObj != NULL) {
-		REQUEST_POINTER_REMAP ((void **)&GameObj);
+	if (old_gameobj) {
+		REQUEST_POINTER_REMAP (old_gameobj, (void **)&GameObj);
 	}
 
 	//
 	//	Request that the mechanism ptr gets remapped
 	//
-	if (Mechanism != NULL) {
-		REQUEST_REF_COUNTED_POINTER_REMAP ((RefCountClass **)&Mechanism);
+	if (old_mechanism) {
+		REQUEST_REF_COUNTED_POINTER_REMAP (old_mechanism, (RefCountClass **)&Mechanism);
 	}
 
 	//
 	//	Request that the path ptr gets remapped
 	//
-	if (Path != NULL) {
-		REQUEST_REF_COUNTED_POINTER_REMAP ((RefCountClass **)&Path);
+	if (old_path) {
+		REQUEST_REF_COUNTED_POINTER_REMAP (old_path, (RefCountClass **)&Path);
 	}
 
 	return ;

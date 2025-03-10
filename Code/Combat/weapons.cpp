@@ -237,7 +237,7 @@ bool	WeaponClass::Save( ChunkSaveClass & csave )
 			csave.Write( model_name, strlen( model_name ) + 1 );
 			csave.End_Micro_Chunk();
 #endif
-			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_MODEL_PTR, Model );
+			WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_MODEL_PTR, Model );
 		}
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_STATE, State );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_STATE_TIMER, StateTimer );
@@ -284,6 +284,8 @@ bool	WeaponClass::Save( ChunkSaveClass & csave )
 
 bool	WeaponClass::Load( ChunkLoadClass &cload )
 {
+	uint32 old_model_ptr = 0;
+
 	while (cload.Open_Chunk()) {
 		switch(cload.Cur_Chunk_ID()) {
 
@@ -332,7 +334,7 @@ bool	WeaponClass::Load( ChunkLoadClass &cload )
 						}
 #endif
 
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_MODEL_PTR, Model );
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_MODEL_PTR, old_model_ptr );
 
 						default:
 							Debug_Say(("Unhandled Micro Chunk:%d File:%s Line:%d\r\n",cload.Cur_Micro_Chunk_ID(),__FILE__,__LINE__));
@@ -362,8 +364,8 @@ bool	WeaponClass::Load( ChunkLoadClass &cload )
 		cload.Close_Chunk();
 	}
 
-	if (Model != NULL) {
-		REQUEST_REF_COUNTED_POINTER_REMAP ((RefCountClass **)&Model);
+	if (old_model_ptr) {
+		REQUEST_REF_COUNTED_POINTER_REMAP (old_model_ptr, (RefCountClass **)&Model);
 	}
 
 	// Legacy
@@ -576,7 +578,7 @@ void	WeaponClass::Do_Reload( void )
 
 float	WeaponClass::Get_Range( void )
 {
-	return ( PrimaryAmmoDefinition != NULL ) ? PrimaryAmmoDefinition->Range : 0;
+	return ( PrimaryAmmoDefinition != NULL ) ? (float)PrimaryAmmoDefinition->Range : 0.f;
 }
 
 

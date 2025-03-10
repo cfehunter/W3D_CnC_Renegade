@@ -645,16 +645,14 @@ bool	SoldierGameObj::Save( ChunkSaveClass & csave )
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_SYNC_LEGS, SyncLegs );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_KEY_RING, KeyRing );		
 //		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_FORCE_FACING, ForceFacing );
-		if ( Vehicle != NULL ) {
-			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_VEHICLE, Vehicle );
-		}
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_VEHICLE, Vehicle );
 		csave.Begin_Micro_Chunk( MICROCHUNKID_ANIMATION_NAME );
 		char anim_string[80];
 		strcpy( anim_string, AnimationName );
 		csave.Write( anim_string, strlen( anim_string ) + 1);
 		csave.End_Micro_Chunk();
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_INNATE_ENABLE_BITS, InnateEnableBits );
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_INNATE_OBSERVER_PTR, InnateObserver );		
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_INNATE_OBSERVER_PTR, InnateObserver );		
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_LAST_LEG_MODE, LastLegMode );		
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_HEAD_LOOK_DURATION, HeadLookDuration );		
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_HEAD_ROTATION, HeadRotation );		
@@ -665,7 +663,7 @@ bool	SoldierGameObj::Save( ChunkSaveClass & csave )
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_SPECIAL_DAMAGE_MODE, SpecialDamageMode );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_SPECIAL_DAMAGE_TIMER, SpecialDamageTimer );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_AI_STATE, AIState );
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_WEAPON_MODEL, WeaponRenderModel );
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_WEAPON_MODEL, WeaponRenderModel );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_IS_USING_GHOST_COLLISION, IsUsingGhostCollision );
 				
 	csave.End_Chunk();
@@ -711,6 +709,10 @@ bool	SoldierGameObj::Load( ChunkLoadClass &cload )
 
 	WWASSERT( Vehicle == NULL );
 
+	uint32 old_vehicle_ptr = 0;
+	uint32 old_innate_observer_ptr = 0;
+	uint32 old_weapon_render_model_ptr = 0;
+
 	while (cload.Open_Chunk()) {
 		switch(cload.Cur_Chunk_ID()) {
 
@@ -730,7 +732,7 @@ bool	SoldierGameObj::Load( ChunkLoadClass &cload )
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_DETONATE_C4, DetonateC4 );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_LEG_FACING, LegFacing );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_SYNC_LEGS, SyncLegs );
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_VEHICLE, Vehicle );
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_VEHICLE, old_vehicle_ptr );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_KEY_RING, KeyRing );
 //						READ_MICRO_CHUNK( cload, MICROCHUNKID_FORCE_FACING, ForceFacing );
 
@@ -740,9 +742,9 @@ bool	SoldierGameObj::Load( ChunkLoadClass &cload )
 							break;
 
 						case MICROCHUNKID_INNATE_OBSERVER_PTR:
-							cload.Read( &InnateObserver, sizeof (InnateObserver) );
-							if ( InnateObserver != NULL ) {
-								REQUEST_POINTER_REMAP( (void **)&InnateObserver );
+							cload.Read( &old_innate_observer_ptr, sizeof (old_innate_observer_ptr) );
+							if (InnateObserver) {
+								REQUEST_POINTER_REMAP(old_innate_observer_ptr, (void **)&InnateObserver );
 							}
 							break;
 
@@ -757,7 +759,7 @@ bool	SoldierGameObj::Load( ChunkLoadClass &cload )
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_SPECIAL_DAMAGE_MODE, SpecialDamageMode );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_SPECIAL_DAMAGE_TIMER, SpecialDamageTimer );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_AI_STATE, AIState );
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_WEAPON_MODEL, WeaponRenderModel );
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_WEAPON_MODEL, old_weapon_render_model_ptr);
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_IS_USING_GHOST_COLLISION, IsUsingGhostCollision );
 
 						default:
@@ -767,8 +769,8 @@ bool	SoldierGameObj::Load( ChunkLoadClass &cload )
 					}
 					cload.Close_Micro_Chunk();
 				}
-				if ( Vehicle != NULL ) {
-					REQUEST_POINTER_REMAP( (void **)&Vehicle );
+				if (old_vehicle_ptr) {
+					REQUEST_POINTER_REMAP(old_vehicle_ptr, (void **)&Vehicle );
 				}
 				break;
 
@@ -812,8 +814,8 @@ bool	SoldierGameObj::Load( ChunkLoadClass &cload )
 		cload.Close_Chunk();
 	}
 
-	if ( WeaponRenderModel != NULL ) {
-		REQUEST_REF_COUNTED_POINTER_REMAP( (RefCountClass **)&WeaponRenderModel );
+	if (old_weapon_render_model_ptr) {
+		REQUEST_REF_COUNTED_POINTER_REMAP(old_weapon_render_model_ptr, (RefCountClass **)&WeaponRenderModel);
 	}
 
 
@@ -1331,7 +1333,7 @@ Matrix3D tm(1);
 	static int crc = UNINITIALLIZED_CRC;
 tm.Rotate_X( 1.4f );
 	if ( crc == UNINITIALLIZED_CRC ) {
-		char * filelist[] = {
+		static constexpr const char * filelist[] = {
 		"laif`wp-gga",								//"objects.ddb",              
 		"bqnlq-jmj",								//"armor.ini",                
 		"almfp-jmj",								//"bones.ini",                
@@ -2282,7 +2284,7 @@ SyncLegs = true;
 static float	_shake_delay = 0;
 static float	_cry_delay = 0;
 
-static char * _profile_name = "Soldier Think";
+static constexpr const char * _profile_name = "Soldier Think";
 
 //------------------------------------------------------------------------------------
 void	SoldierGameObj::Think( void )

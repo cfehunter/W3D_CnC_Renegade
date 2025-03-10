@@ -49,6 +49,7 @@
 	#include "actionparams.h"
 #endif
 
+#include "bittype.h"
 
 /*
 ** DLL import/export macros
@@ -413,9 +414,9 @@ typedef struct {
 	void	(*Cinematic_Sniper_Control)	(bool enabled, float zoom);
 
 	// File Access
-	int	(*Text_File_Open)			( const char * filename );
-	bool	(*Text_File_Get_String)	( int handle, char * buffer, int size );
-	void	(*Text_File_Close)		( int handle );
+	uintptr (*Text_File_Open)			( const char * filename );
+	bool	(*Text_File_Get_String)	( uintptr handle, char * buffer, int size );
+	void	(*Text_File_Close)		( uintptr handle );
 
 	// Vehicle Transitions
 	void	(*Enable_Vehicle_Transitions)	( GameObject * object, bool enable );

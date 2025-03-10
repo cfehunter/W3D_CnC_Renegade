@@ -1092,24 +1092,24 @@ PilotClass::Save (ChunkSaveClass &csave)
 		WRITE_MICRO_CHUNK (csave, VARID_NEXT_POINT,			m_NextPoint);
 		WRITE_MICRO_CHUNK (csave, VARID_CURRENT_TM,			m_CurrentTM);
 		WRITE_MICRO_CHUNK (csave, VARID_OBJ_SPACE_DEST,		m_ObjSpaceDest);
-		WRITE_MICRO_CHUNK (csave, VARID_OBJ_SPACE_WPOINT,	m_ObjSpaceWaypoint);		
-		WRITE_MICRO_CHUNK (csave, VARID_PATH_PTR,				m_CurrentPath);	
-		WRITE_MICRO_CHUNK (csave, VARID_GAMEOBJ_PTR,			m_GameObj);	
+		WRITE_MICRO_CHUNK (csave, VARID_OBJ_SPACE_WPOINT,	m_ObjSpaceWaypoint);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_PATH_PTR,		m_CurrentPath);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_GAMEOBJ_PTR,	m_GameObj);
 		WRITE_MICRO_CHUNK (csave, VARID_MAX_SPEED,			m_MaxSpeed);
 		WRITE_MICRO_CHUNK (csave, VARID_SPEED_FACTOR,		m_SpeedFactor);
 		WRITE_MICRO_CHUNK (csave, VARID_AGGRESSIVENESS,		m_Aggressiveness);
 		WRITE_MICRO_CHUNK (csave, VARID_ARRIVED_DIST,		m_ArrivedDist);
 		WRITE_MICRO_CHUNK (csave, VARID_HOVERDIST,			m_HoverDist);
 		WRITE_MICRO_CHUNK (csave, VARID_ISEXACT_Z_IMPORT,	m_IsExactZImportant);
-		WRITE_MICRO_CHUNK (csave, VARID_FACE_TARGET,			m_FaceTarget);
+		WRITE_MICRO_CHUNK (csave, VARID_FACE_TARGET,		m_FaceTarget);
 		WRITE_MICRO_CHUNK (csave, VARID_TARGET_LOCATION,	m_TargetLocation);
-		WRITE_MICRO_CHUNK (csave, VARID_MODE,					m_Mode);
+		WRITE_MICRO_CHUNK (csave, VARID_MODE,				m_Mode);
 		WRITE_MICRO_CHUNK (csave, VARID_FORWARD_SPEED,		m_ForwardSpeed);
 		WRITE_MICRO_CHUNK (csave, VARID_STRAFE_SPEED,		m_StrafeSpeed);
 		WRITE_MICRO_CHUNK (csave, VARID_LIFT_SPEED,			m_LiftSpeed);
 		WRITE_MICRO_CHUNK (csave, VARID_TURN_SHARPNESS,		m_TurnSharpness);
 		WRITE_MICRO_CHUNK (csave, VARID_CIRCLE_ANGLE,		m_CircleAngle);
-		WRITE_MICRO_CHUNK (csave, VARID_CIRCLE_DIST,			m_CircleDist);
+		WRITE_MICRO_CHUNK (csave, VARID_CIRCLE_DIST,		m_CircleDist);
 		WRITE_MICRO_CHUNK (csave, VARID_MIN_CIRCLE_ANGLE,	m_MinCircleAngle);
 		WRITE_MICRO_CHUNK (csave, VARID_MAX_CIRCLE_ANGLE,	m_MaxCircleAngle); 
 
@@ -1149,6 +1149,9 @@ PilotClass::Load (ChunkLoadClass &cload)
 void
 PilotClass::Load_Variables (ChunkLoadClass &cload)
 {
+	uint32 old_game_obj = 0;
+	uint32 old_path = 0;
+
 	//
 	//	Loop through all the microchunks that define the variables
 	//
@@ -1160,8 +1163,8 @@ PilotClass::Load_Variables (ChunkLoadClass &cload)
 			READ_MICRO_CHUNK (cload, VARID_CURRENT_TM,			m_CurrentTM);
 			READ_MICRO_CHUNK (cload, VARID_OBJ_SPACE_DEST,		m_ObjSpaceDest);
 			READ_MICRO_CHUNK (cload, VARID_OBJ_SPACE_WPOINT,	m_ObjSpaceWaypoint);
-			READ_MICRO_CHUNK (cload, VARID_PATH_PTR,				m_CurrentPath);	
-			READ_MICRO_CHUNK (cload, VARID_GAMEOBJ_PTR,			m_GameObj);	
+			READ_MICRO_CHUNK (cload, VARID_PATH_PTR,				old_path);
+			READ_MICRO_CHUNK (cload, VARID_GAMEOBJ_PTR,			old_game_obj);
 			READ_MICRO_CHUNK (cload, VARID_MAX_SPEED,				m_MaxSpeed);
 			READ_MICRO_CHUNK (cload, VARID_SPEED_FACTOR,			m_SpeedFactor);
 			READ_MICRO_CHUNK (cload, VARID_AGGRESSIVENESS,		m_Aggressiveness);
@@ -1187,15 +1190,15 @@ PilotClass::Load_Variables (ChunkLoadClass &cload)
 	//
 	//	Request that the game object ptr gets remapped
 	//
-	if (m_GameObj != NULL) {
-		REQUEST_POINTER_REMAP ((void **)&m_GameObj);
+	if (old_game_obj) {
+		REQUEST_POINTER_REMAP (old_game_obj, (void **)&m_GameObj);
 	}
 
 	//
 	//	Request that the path object ptr gets remapped
 	//
-	if (m_CurrentPath != NULL) {
-		REQUEST_POINTER_REMAP ((void **)&m_CurrentPath);
+	if (old_path) {
+		REQUEST_POINTER_REMAP (old_path, (void **)&m_CurrentPath);
 	}	
 
 	return ;

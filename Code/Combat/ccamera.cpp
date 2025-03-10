@@ -414,7 +414,7 @@ enum	{
 bool	CCameraClass::Save( ChunkSaveClass & csave )
 {
 	csave.Begin_Chunk( CHUNKID_VARIABLES );
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_HOST_MODEL,					HostModel );
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_HOST_MODEL,					HostModel );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_ANCHOR_POSITION,			AnchorPosition );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_IS_VALID,					IsValid );
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_TILT,							Tilt );
@@ -462,6 +462,8 @@ bool	CCameraClass::Save( ChunkSaveClass & csave )
 //------------------------------------------------------------------------------------
 bool	CCameraClass::Load( ChunkLoadClass &cload )
 {
+	uint32 old_host_model = 0;
+
 	StringClass	current_name;
 	StringClass	last_name;
 	StringClass	default_name;
@@ -471,7 +473,7 @@ bool	CCameraClass::Load( ChunkLoadClass &cload )
 			case CHUNKID_VARIABLES:
 				while (cload.Open_Micro_Chunk()) {
 					switch(cload.Cur_Micro_Chunk_ID()) {
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_HOST_MODEL,					HostModel );
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_HOST_MODEL,				old_host_model );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_ANCHOR_POSITION,			AnchorPosition );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_IS_VALID,						IsValid );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_TILT,							Tilt );
@@ -534,8 +536,8 @@ bool	CCameraClass::Load( ChunkLoadClass &cload )
 		DefaultProfileName=default_name;
 	}
 
-	if ( HostModel != NULL ) {
-		REQUEST_REF_COUNTED_POINTER_REMAP ((RefCountClass **)&HostModel);
+	if (old_host_model) {
+		REQUEST_REF_COUNTED_POINTER_REMAP (old_host_model, (RefCountClass **)&HostModel);
 
 	}
 

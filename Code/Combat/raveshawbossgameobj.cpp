@@ -868,16 +868,17 @@ RaveshawBossGameObjClass::Save_Variables (ChunkSaveClass &csave)
 	//
 	//	Save a pointer for each arc-object
 	//
-	for (int index = 0; index < ARC_OBJ_COUNT; index ++) {		
-		WRITE_MICRO_CHUNK (csave, VARID_ARC_OBJ_PTR,	ArcObjects[index]);
+	for (int index = 0; index < ARC_OBJ_COUNT; index ++) {
+		SimpleGameObj* arc = ArcObjects[index];
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_ARC_OBJ_PTR, arc);
 	}
 
 	Matrix3D cam_tm = CameraBoneModel->Get_Transform ();
-	WRITE_MICRO_CHUNK (csave, VARID_CAMERA_BONE_PTR,					CameraBoneModel);
+	WRITE_PTR_MICRO_CHUNK (csave, VARID_CAMERA_BONE_PTR,					CameraBoneModel);
 	WRITE_MICRO_CHUNK (csave, VARID_CAMERA_BONE_TM,						cam_tm);
-	WRITE_MICRO_CHUNK (csave, VARID_RESTORE_FIRST_PERSON,				RestoreFirstPerson);	
+	WRITE_MICRO_CHUNK (csave, VARID_RESTORE_FIRST_PERSON,				RestoreFirstPerson);
 
-	WRITE_MICRO_CHUNK (csave, VARID_THROWN_OBJECT_PTR,					ThrownObject);
+	WRITE_PTR_MICRO_CHUNK (csave, VARID_THROWN_OBJECT_PTR,					ThrownObject);
 	WRITE_MICRO_CHUNK (csave, VARID_IS_TIBERIUM_EFFECT_APPLIED,		IsTiberiumEffectApplied);
 
 	WRITE_MICRO_CHUNK (csave, VARID_CURRENT_DEST_POS,					CurrentDestPos);
@@ -908,7 +909,8 @@ RaveshawBossGameObjClass::Save_Variables (ChunkSaveClass &csave)
 void
 RaveshawBossGameObjClass::Load_Variables (ChunkLoadClass &cload)
 {
-	RenderObjClass *old_camera_bone_ptr = NULL;
+	uint32 old_camera_bone_ptr = 0;
+	uint32 old_thrown_object_ptr = 0;
 	Matrix3D cam_tm (1);
 	int arc_obj_index = 0;
 
@@ -916,14 +918,18 @@ RaveshawBossGameObjClass::Load_Variables (ChunkLoadClass &cload)
 		switch (cload.Cur_Micro_Chunk_ID ()) {
 
 			case VARID_ARC_OBJ_PTR:
-				LOAD_MICRO_CHUNK (cload, ArcObjects[arc_obj_index++]);
-				break;
+			{
+				uint32 id = 0;
+				LOAD_MICRO_CHUNK (cload, id);
+				ArcObjects[arc_obj_index++] = reinterpret_cast<SimpleGameObj*>(uintptr(id));
+			}
+			break;
 
 			READ_MICRO_CHUNK (cload, VARID_CAMERA_BONE_PTR,					old_camera_bone_ptr);
 			READ_MICRO_CHUNK (cload, VARID_CAMERA_BONE_TM,					cam_tm);
 			READ_MICRO_CHUNK (cload, VARID_RESTORE_FIRST_PERSON,			RestoreFirstPerson);	
 
-			READ_MICRO_CHUNK (cload, VARID_THROWN_OBJECT_PTR,				ThrownObject);
+			READ_MICRO_CHUNK (cload, VARID_THROWN_OBJECT_PTR,				old_thrown_object_ptr);
 			READ_MICRO_CHUNK (cload, VARID_IS_TIBERIUM_EFFECT_APPLIED,	IsTiberiumEffectApplied);
 
 			READ_MICRO_CHUNK (cload, VARID_CURRENT_DEST_POS,				CurrentDestPos);
@@ -955,17 +961,17 @@ RaveshawBossGameObjClass::Load_Variables (ChunkLoadClass &cload)
 	//	Remap the arc-object pointers
 	//
 	for (int index = 0; index < arc_obj_index; index ++) {
-		REQUEST_POINTER_REMAP ((void **)&ArcObjects[index]);
+		REQUEST_POINTER_REMAP (uintptr(ArcObjects[index]), (void **)&ArcObjects[index]);
 	}
 
-	if (ThrownObject != NULL) {
-		REQUEST_POINTER_REMAP ((void **)&ThrownObject);
+	if (old_thrown_object_ptr) {
+		REQUEST_POINTER_REMAP (old_thrown_object_ptr, (void **)&ThrownObject);
 	}
 
 	//
 	//	Register the camera bone pointers...
 	//
-	if (old_camera_bone_ptr != NULL) {			
+	if (old_camera_bone_ptr) {
 		SaveLoadSystemClass::Register_Pointer (old_camera_bone_ptr, CameraBoneModel);
 		CameraBoneModel->Set_Transform (cam_tm);
 	}

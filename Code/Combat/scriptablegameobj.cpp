@@ -433,12 +433,12 @@ bool	ScriptableGameObj::Save( ChunkSaveClass & csave )
 
 	csave.Begin_Chunk( CHUNKID_VARIABLES );
 		ReferenceableGameObj * referenceable_ptr = (ReferenceableGameObj *)this;
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_REFERENCEABLE_PTR, referenceable_ptr );
+		WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_REFERENCEABLE_PTR, referenceable_ptr );
 
 		const GameObjObserverList & observer_list = Get_Observers();
 		for( int index = 0; index < observer_list.Count(); index++ ) {
 			void	* game_obj_observer_ptr = observer_list[ index ];
-			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_GAME_OBJ_OBSERVER_PTR, game_obj_observer_ptr );
+			WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_GAME_OBJ_OBSERVER_PTR, game_obj_observer_ptr );
 		}
 
 		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_OBSERVER_CREATED_PENDING, ObserverCreatedPending );
@@ -462,7 +462,7 @@ bool	ScriptableGameObj::Save( ChunkSaveClass & csave )
 
 bool	ScriptableGameObj::Load( ChunkLoadClass &cload )
 {
-	ReferenceableGameObj * referenceable_ptr = NULL;
+	uint32 referenceable_ptr = 0;
 
 	WWASSERT( Observers.Count() == 0 );
 
@@ -484,10 +484,12 @@ bool	ScriptableGameObj::Load( ChunkLoadClass &cload )
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_OBSERVER_CREATED_PENDING, ObserverCreatedPending );
 
 						case MICROCHUNKID_GAME_OBJ_OBSERVER_PTR:
-							GameObjObserverClass * ptr;
-							cload.Read(&ptr,sizeof(ptr));
-							Observers.Add( ptr );
+						{
+							uint32 old_observer = 0;
+							cload.Read(&old_observer,sizeof(old_observer));
+							Observers.Add(reinterpret_cast<GameObjObserverClass*>(uintptr(old_observer)));
 							break;
+						}
 
 						default:
 							Debug_Say(( "Unhandled Variable Chunk:%d File:%s Line:%d\r\n",cload.Cur_Chunk_ID(),__FILE__,__LINE__));
@@ -521,11 +523,11 @@ bool	ScriptableGameObj::Load( ChunkLoadClass &cload )
 
 	// Request a remap on all the observers
 	for ( int ob_idx = 0; ob_idx < Observers.Count(); ob_idx++ ) {
-		REQUEST_POINTER_REMAP( (void **)&(Observers[ ob_idx ]) );
+		REQUEST_POINTER_REMAP(uintptr_t(Observers[ob_idx]), (void **)&(Observers[ ob_idx ]) );
 	}
 
-	WWASSERT(referenceable_ptr != NULL);
-	if (referenceable_ptr != NULL) {
+	WWASSERT(referenceable_ptr);
+	if (referenceable_ptr) {
 		SaveLoadSystemClass::Register_Pointer(referenceable_ptr , (ReferenceableGameObj *)this);
 	}
 

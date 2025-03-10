@@ -209,7 +209,7 @@ bool	SoldierObserverClass::Save (ChunkSaveClass &csave)
 			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_HOME_RADIUS, HomeRadius );
 			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_ALERT_POSITION, AlertPosition );
 			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_ACTION_TIMER, ActionTimer );
-			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_COVER_POSITION, CoverPosition );
+			WRITE_PTR_MICRO_CHUNK( csave, MICROCHUNKID_COVER_POSITION, CoverPosition );
 			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_COVERED_ATTACK, CoveredAttack );
 			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_CONVERSATION_TIMER, ConversationTimer );
 			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_IS_ALERTED, IsAlerted );
@@ -234,6 +234,8 @@ bool	SoldierObserverClass::Save (ChunkSaveClass &csave)
 
 bool	SoldierObserverClass::Load (ChunkLoadClass &cload)
 {
+	uint32 old_cover_position = 0;
+
 	while (cload.Open_Chunk()) {
 		switch(cload.Cur_Chunk_ID()) {
 
@@ -250,7 +252,7 @@ bool	SoldierObserverClass::Load (ChunkLoadClass &cload)
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_HOME_RADIUS, HomeRadius );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_ALERT_POSITION, AlertPosition );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_ACTION_TIMER, ActionTimer );
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_COVER_POSITION, CoverPosition );
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_COVER_POSITION, old_cover_position);
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_COVERED_ATTACK, CoveredAttack );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_CONVERSATION_TIMER, ConversationTimer );
 						READ_MICRO_CHUNK( cload, MICROCHUNKID_IS_ALERTED, IsAlerted );
@@ -279,8 +281,8 @@ bool	SoldierObserverClass::Load (ChunkLoadClass &cload)
 		cload.Close_Chunk();
 	}
 
-	if ( CoverPosition ) {
-		REQUEST_POINTER_REMAP( (void **)&CoverPosition );
+	if (old_cover_position) {
+		REQUEST_POINTER_REMAP(old_cover_position, (void **)&CoverPosition);
 	}
 
 	return true;
