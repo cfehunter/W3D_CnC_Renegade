@@ -79,7 +79,7 @@ public:
 	PhysClass *			Peek_Projection_Object(void) const;
 	virtual void *		Get_Projection_Object_ID(void) const			{ return ProjectionObject; }
 
-	void					Set_Light_Source_ID(uint32 id);
+	void					Set_Light_Source_ID(uintptr id);
 	uint32				Get_Light_Source_ID(void);
 
 	void					Set_Light_Vector(const Vector3 & vector);

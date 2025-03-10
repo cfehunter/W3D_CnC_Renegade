@@ -415,12 +415,8 @@ bool MoveablePhysClass::Save(ChunkSaveClass &csave)
 	WRITE_MICRO_CHUNK(csave,MOVEABLE_VARIABLE_MASS,Mass);
 	WRITE_MICRO_CHUNK(csave,MOVEABLE_VARIABLE_GRAVSCALE,GravScale);
 	WRITE_MICRO_CHUNK(csave,MOVEABLE_VARIABLE_ELASTICITY,Elasticity);
-	if (Controller != NULL) {
-		WRITE_MICRO_CHUNK(csave,MOVEABLE_VARIABLE_CONTROLLER,Controller);
-	}
-	if (Carrier != NULL) {
-		WRITE_MICRO_CHUNK(csave,MOVEABLE_VARIABLE_CARRIER,Carrier);
-	}
+	WRITE_PTR_MICRO_CHUNK(csave,MOVEABLE_VARIABLE_CONTROLLER,Controller);
+	WRITE_PTR_MICRO_CHUNK(csave,MOVEABLE_VARIABLE_CARRIER,Carrier);
 	csave.End_Chunk();
 
 	return true;
@@ -441,6 +437,9 @@ bool MoveablePhysClass::Save(ChunkSaveClass &csave)
  *=============================================================================================*/
 bool MoveablePhysClass::Load(ChunkLoadClass &cload)
 {
+	uint32 old_controller = 0;
+	uint32 old_carrier = 0;
+
 	Controller = NULL;
 	Carrier = NULL;
 
@@ -462,8 +461,8 @@ bool MoveablePhysClass::Load(ChunkLoadClass &cload)
 						READ_MICRO_CHUNK(cload,MOVEABLE_VARIABLE_MASS,Mass);
 						READ_MICRO_CHUNK(cload,MOVEABLE_VARIABLE_GRAVSCALE,GravScale);
 						READ_MICRO_CHUNK(cload,MOVEABLE_VARIABLE_ELASTICITY,Elasticity);
-						READ_MICRO_CHUNK(cload,MOVEABLE_VARIABLE_CONTROLLER,Controller);
-						READ_MICRO_CHUNK(cload,MOVEABLE_VARIABLE_CARRIER,Carrier);
+						READ_MICRO_CHUNK(cload,MOVEABLE_VARIABLE_CONTROLLER,old_controller);
+						READ_MICRO_CHUNK(cload,MOVEABLE_VARIABLE_CARRIER,old_carrier);
 					}
 					cload.Close_Micro_Chunk();	
 				}
@@ -477,13 +476,11 @@ bool MoveablePhysClass::Load(ChunkLoadClass &cload)
 		cload.Close_Chunk();
 	}
 
-	if (Controller != NULL) {
-		REQUEST_POINTER_REMAP((void**)&Controller);
-	}
+	if (Controller)
+		REQUEST_POINTER_REMAP(old_controller, (void**)&Controller);
 
-	if (Carrier != NULL) {
-		REQUEST_POINTER_REMAP((void**)&Carrier);
-	}
+	if (Carrier)
+		REQUEST_POINTER_REMAP(old_carrier, (void**)&Carrier);
 
 	SaveLoadSystemClass::Register_Post_Load_Callback(this);
 

@@ -529,7 +529,7 @@ HeightDBClass::Save (ChunkSaveClass &csave)
 	//
 	csave.Begin_Chunk (CHUNKID_HEIGHT_ARRAY);
 		int entries = m_NumPointsX * m_NumPointsY;
-		csave.Write (m_HeightArray, entries * sizeof (float));
+		csave.Write(m_HeightArray, entries * sizeof (float));
 	csave.End_Chunk ();
 
 	return retval;
@@ -560,7 +560,7 @@ HeightDBClass::Load (ChunkLoadClass &cload)
 				//
 				int entries = m_NumPointsX * m_NumPointsY;
 				m_HeightArray = new float[entries];
-				cload.Read (m_HeightArray, entries * sizeof (float));
+				cload.Read(m_HeightArray, entries * sizeof (float));
 			}
 			break;
 

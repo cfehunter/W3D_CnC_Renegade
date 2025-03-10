@@ -72,7 +72,7 @@ PhysClass * DynTexProjectClass::Peek_Projection_Object(void) const
 	return ProjectionObject;
 }
 
-void DynTexProjectClass::Set_Light_Source_ID(uint32 id)
+void DynTexProjectClass::Set_Light_Source_ID(uintptr id)
 {
 	LightSourceID = id;
 }

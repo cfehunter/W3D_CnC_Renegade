@@ -142,8 +142,7 @@ AccessiblePhysClass::Save (ChunkSaveClass &csave)
 //	Save_Variables
 //
 /////////////////////////////////////////////////////////////////////////
-bool
-AccessiblePhysClass::Save_Variables (ChunkSaveClass &csave)
+bool AccessiblePhysClass::Save_Variables (ChunkSaveClass &csave)
 {
 	WRITE_MICRO_CHUNK (csave, VARID_LOCKCODE, LockCode);
 	return true;
@@ -155,8 +154,7 @@ AccessiblePhysClass::Save_Variables (ChunkSaveClass &csave)
 //	Load
 //
 /////////////////////////////////////////////////////////////////////////
-bool
-AccessiblePhysClass::Load (ChunkLoadClass &cload)
+bool AccessiblePhysClass::Load (ChunkLoadClass &cload)
 {
 	while (cload.Open_Chunk ()) {
 		

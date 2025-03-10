@@ -166,7 +166,7 @@ bool
 PathfindSectorClass::Load_Variables (ChunkLoadClass &cload)
 {
 	AABoxClass bounding_box;
-	PathfindSectorClass *old_ptr = NULL;
+	uint32 old_ptr = 0;
 
 	//
 	//	Read all the micro chunks...
@@ -179,7 +179,7 @@ PathfindSectorClass::Load_Variables (ChunkLoadClass &cload)
 			case VARID_PORTAL_ID:
 			{
 				uint32 portal_id = 0;				
-				cload.Read (&portal_id, sizeof (portal_id));
+				cload.Read(&portal_id, sizeof (portal_id));
 				if (portal_id < PathfindClass::TEMP_PORTAL_ID_START) {
 					m_PortalList.Add (portal_id);
 				}
@@ -197,9 +197,8 @@ PathfindSectorClass::Load_Variables (ChunkLoadClass &cload)
 	//
 	//	Register our old ptr so other objects can remap to us
 	//
-	if (old_ptr != NULL) {
+	if (old_ptr)
 		SaveLoadSystemClass::Register_Pointer (old_ptr, this);
-	}
 	
 	Set_Bounding_Box (bounding_box);
 	return true;

@@ -161,7 +161,7 @@ void DynamicShadowManagerClass::Update_Shadow(void)
 		*/
 		LightClass * sun = scene->Get_Sun_Light();
 		Shadow->Enable_Perspective(false);
-		Shadow->Set_Light_Source_ID((uint32)sun);
+		Shadow->Set_Light_Source_ID((uintptr)sun);
 		Shadow->Set_Light_Vector(sunlight);
 		sun->Release_Ref();
 		found_light = true;

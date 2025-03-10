@@ -219,14 +219,14 @@ uint32 SaveLoadSystemClass::Convert_Pointer(void* pointer)
 
 #ifdef WWDEBUG
 
-void SaveLoadSystemClass::Request_Pointer_Remap (void **pointer_to_convert,const char * file,int line)
+void SaveLoadSystemClass::Request_Pointer_Remap (uint32 old_pointer, void** pointer_to_convert,const char * file,int line)
 {
-	PointerRemapper.Request_Pointer_Remap(pointer_to_convert,file,line);
+	PointerRemapper.Request_Pointer_Remap(old_pointer, pointer_to_convert,file,line);
 }
 
-void SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap (RefCountClass **pointer_to_convert,const char * file,int line)
+void SaveLoadSystemClass::Request_Ref_Counted_Pointer_Remap (uint32 old_pointer, RefCountClass **pointer_to_convert,const char * file,int line)
 {
-	PointerRemapper.Request_Ref_Counted_Pointer_Remap(pointer_to_convert,file,line);
+	PointerRemapper.Request_Ref_Counted_Pointer_Remap(old_pointer, pointer_to_convert,file,line);
 }
 
 #else

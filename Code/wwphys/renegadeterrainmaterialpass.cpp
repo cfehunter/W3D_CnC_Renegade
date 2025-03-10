@@ -211,7 +211,7 @@ RenegadeTerrainMaterialPassClass::Save (ChunkSaveClass &csave)
 	//	Save the vertex alpha array
 	//
 	csave.Begin_Chunk (CHUNKID_VERTEX_ALPHAS);
-		csave.Write (VertexAlpha, sizeof (float) * VertexCount);
+		csave.Write(VertexAlpha, sizeof (float) * VertexCount);
 	csave.End_Chunk ();
 
 	//
@@ -255,9 +255,9 @@ RenegadeTerrainMaterialPassClass::Save (ChunkSaveClass &csave)
 		//
 		//	Save the vertex index map
 		//
-		csave.Begin_Chunk (CHUNKID_VERTEX_INDEX_MAP);
+		csave.Begin_Chunk(CHUNKID_VERTEX_INDEX_MAP);
 			csave.Write (VertexIndexMap[index], sizeof (int) * VertexCount);
-		csave.End_Chunk ();		
+		csave.End_Chunk();
 	}
 
 	return true;
@@ -285,11 +285,11 @@ RenegadeTerrainMaterialPassClass::Load (ChunkLoadClass &cload)
 				break;
 
 			case CHUNKID_VERTEX_ALPHAS:
-				cload.Read (VertexAlpha, sizeof (float) * VertexCount);
+				cload.Read(VertexAlpha, sizeof (float) * VertexCount);
 				break;
 
 			case CHUNKID_VERTEX_UVS:
-				cload.Read (GridUVs, sizeof (Vector2) * VertexCount);
+				cload.Read(GridUVs, sizeof (Vector2) * VertexCount);
 				break;
 
 			case CHUNKID_MATERIAL:
@@ -310,14 +310,14 @@ RenegadeTerrainMaterialPassClass::Load (ChunkLoadClass &cload)
 				//	Read the number of quads
 				//
 				int count = 0;
-				cload.Read (&count, sizeof (int));
+				cload.Read(&count, sizeof (int));
 
 				//
 				//	Allocate enough room for this many quads and read them in...
 				//
 				QuadList[pass].Resize (count);
 				if (count > 0) {
-					cload.Read (&QuadList[pass][0], sizeof (int) * count);
+					cload.Read(&QuadList[pass][0], sizeof (int) * count);
 					QuadList[pass].Set_Active (count);
 				}
 				break;
@@ -329,21 +329,21 @@ RenegadeTerrainMaterialPassClass::Load (ChunkLoadClass &cload)
 				//	Read the number of vertices
 				//
 				int count = 0;
-				cload.Read (&count, sizeof (int));
+				cload.Read(&count, sizeof (int));
 
 				//
 				//	Allocate enough room for this many vertices and read them in...
 				//
 				VertexRenderList[pass].Resize (count);
 				if (count > 0) {
-					cload.Read (&VertexRenderList[pass][0], sizeof (int) * count);
+					cload.Read(&VertexRenderList[pass][0], sizeof (int) * count);
 					VertexRenderList[pass].Set_Active (count);
 				}
 				break;
 			}
 
 			case CHUNKID_VERTEX_INDEX_MAP:
-				cload.Read (VertexIndexMap[pass], sizeof (int) * VertexCount);
+				cload.Read(VertexIndexMap[pass], sizeof (int) * VertexCount);
 				break;
 		}
 

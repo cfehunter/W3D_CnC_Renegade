@@ -789,7 +789,7 @@ public:
 			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_FIRST_CALL,			FirstCall		);
 			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_USE_MOVE_OBJECT,	UseMoveObject	);
 			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_TARGET_PREV_POS,	TargetPrevPos	);
-			WRITE_MICRO_CHUNK( csave, MICROCHUNKID_PATH_SOLVE_PTR,	PathSolver		);
+			WRITE_PTR_MICRO_CHUNK(csave, MICROCHUNKID_PATH_SOLVE_PTR, PathSolver);
 		csave.End_Chunk();
 
 		csave.Begin_Chunk( CHUNKID_PATH_ACTION );
@@ -816,12 +816,14 @@ public:
 							READ_MICRO_CHUNK( cload, MICROCHUNKID_TARGET_PREV_POS,	TargetPrevPos	);
 
 							case MICROCHUNKID_PATH_SOLVE_PTR:
-								LOAD_MICRO_CHUNK( cload, PathSolver );
-								if (PathSolver != NULL) {
-									REQUEST_REF_COUNTED_POINTER_REMAP( (RefCountClass **)&PathSolver );
+							{
+								uint32 old_path_solver = 0;
+								LOAD_MICRO_CHUNK( cload, old_path_solver);
+								if (old_path_solver) {
+									REQUEST_REF_COUNTED_POINTER_REMAP(old_path_solver, (RefCountClass **)&PathSolver );
 								}
 								break;
-
+							}
 							default:
 								Debug_Say(("Unhandled Micro Chunk:%d File:%s Line:%d\r\n",cload.Cur_Micro_Chunk_ID(),__FILE__,__LINE__));
 								break;
@@ -2316,10 +2318,11 @@ public:
 				ConversationClass *conv = ConversationMgrClass::Find_Conversation (Conversation->Get_ID ());
 				if (conv != NULL) {
 
+					const uint32 id = SaveLoadSystemClass::Convert_Pointer(Conversation);
 					//
 					//	Save the conversation pointer
 					//
-					WRITE_MICRO_CHUNK( csave, MICROCHUNKID_CONVERSATION_PTR, Conversation );
+					WRITE_MICRO_CHUNK( csave, MICROCHUNKID_CONVERSATION_PTR, id );
 					REF_PTR_RELEASE( conv );
 				}
 			}
@@ -2345,16 +2348,18 @@ public:
 							READ_MICRO_CHUNK( cload, MICROCHUNKID_ORIGINAL_POS,			OriginalPos		);
 
 							case MICROCHUNKID_CONVERSATION_PTR:
-								LOAD_MICRO_CHUNK( cload, Conversation );
+							{
+								uint32 old_conversation_id = 0;
+								LOAD_MICRO_CHUNK( cload, old_conversation_id);
 
 								//
 								//	Fixup the pointer
 								//
-								if (Conversation != NULL) {
-									REQUEST_REF_COUNTED_POINTER_REMAP( (RefCountClass **)&Conversation );
+								if (old_conversation_id) {
+									REQUEST_REF_COUNTED_POINTER_REMAP(old_conversation_id, (RefCountClass **)&Conversation );
 								}
 								break;
-
+							}
 							default:
 								Debug_Say(("Unhandled Micro Chunk:%d File:%s Line:%d\r\n",cload.Cur_Micro_Chunk_ID(),__FILE__,__LINE__));
 								break;

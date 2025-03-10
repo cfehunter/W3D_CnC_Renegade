@@ -57,6 +57,7 @@
 #include "iostruct.h"
 #endif
 
+#include <type_traits>
 
 /************************************************************************************
 
@@ -148,11 +149,15 @@ public:
 	bool					End_Micro_Chunk();
 
 	// Write data into the file
-	uint32				Write(const void *buf, uint32 nbytes);
+	uint32				Write(const void* buf, uint32 nbytes);
 	uint32				Write(const IOVector2Struct & v);
 	uint32				Write(const IOVector3Struct & v);
 	uint32				Write(const IOVector4Struct & v);
 	uint32				Write(const IOQuaternionStruct & q);
+
+	// Do not allow writing T**. Pointers must be converted before writing
+	template <typename T>
+	std::enable_if_t<std::is_pointer_v<std::remove_pointer_t<T>>, uint32_t> Write(const T, uint32) = delete;
 
 private:
 
@@ -200,18 +205,23 @@ public:
 	uint32				Cur_Micro_Chunk_Length();
 
 	// Read a block of bytes from the output stream.
-	uint32				Read(void *buf, uint32 nbytes);
-	uint32				Read(IOVector2Struct * v);
-	uint32				Read(IOVector3Struct * v);
-	uint32				Read(IOVector4Struct * v);
-	uint32				Read(IOQuaternionStruct * q);
+	uint32				Read(void* buf, uint32 nbytes);
+	uint32				Read(IOVector2Struct* v);
+	uint32				Read(IOVector3Struct* v);
+	uint32				Read(IOVector4Struct* v);
+	uint32				Read(IOQuaternionStruct* q);
+
+	// Do not allow reading T**
+	// Pointers must be converted from uint32 ids
+	template <typename T>
+	std::enable_if_t<std::is_pointer_v<std::remove_pointer_t<T>>, uint32_t> Read(T, uint32) = delete;
 
 	// Seek over a block of bytes in the stream (same as Read but don't copy the data to a buffer)
 	uint32				Seek(uint32 nbytes);
 
 	// Sneak peek at the next chunk that will be opened.  Beware, if you need
 	// this, then you are probably hacking so be careful!
-	bool					Peek_Next_Chunk(uint32 * set_id,uint32 * set_size);
+	bool					Peek_Next_Chunk(uint32* set_id,uint32* set_size);
 
 private:
 
@@ -320,6 +330,13 @@ private:
 	csave.Write((const WCHAR *)var, (var.Get_Length () + 1) * 2); \
 	csave.End_Micro_Chunk(); }
 
+#define WRITE_PTR_MICRO_CHUNK(csave, id, var) \
+if (var != nullptr){\
+	const uint32 _id_##var = SaveLoadSystemClass::Convert_Pointer(var);\
+	csave.Begin_Micro_Chunk(id); \
+	csave.Write(&_id_##var, sizeof(_id_##var));\
+	csave.End_Micro_Chunk();\
+}\
 
 /*
 ** READ_MICRO_CHUNK - use this macro in a switch statement to read a micro chunk into a variable
@@ -336,17 +353,17 @@ private:
 **	}
 */
 #define READ_MICRO_CHUNK(cload,id,var)						\
-	case (id):	cload.Read(&var,sizeof(var)); break;	\
+	case (id): cload.Read(&var,sizeof(var)); break;	\
 
 /*
 ** Like READ_MICRO_CHUNK but reads items straight into the data safe.
 */
 #define READ_SAFE_MICRO_CHUNK(cload,id,var,type)								\
-	case (id):	{                                                     \
-		void *temp_read_buffer_on_the_stack = _alloca(sizeof(type));	\
-		cload.Read(temp_read_buffer_on_the_stack, sizeof(type));       \
-		var = *((type*)temp_read_buffer_on_the_stack);                 \
-		break;                                                         \
+	case (id):	{                                                    \
+		void *temp_read_buffer_on_the_stack = _alloca(sizeof(type)); \
+		cload.Read(temp_read_buffer_on_the_stack, sizeof(type));     \
+		var = *((type*)temp_read_buffer_on_the_stack);               \
+		break;                                                       \
 	}
 
 #define READ_MICRO_CHUNK_STRING(cload,id,var,size)		\

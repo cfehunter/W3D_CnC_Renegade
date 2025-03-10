@@ -1849,18 +1849,20 @@ PathSolveClass::Save (ChunkSaveClass &csave)
 {
 	csave.Begin_Chunk (CHUNKID_VARIABLES);
 
+	//#CFE_TODO: Start/Dest sector don't appear to be read, maybe we shouldn't save them?
+
 		//
 		//	Save each variable to its own microchunk
 		//
 		WRITE_MICRO_CHUNK (csave, VARID_STARTPOS,			m_StartPos);
 		WRITE_MICRO_CHUNK (csave, VARID_DESTPOS,			m_DestPos);
-		WRITE_MICRO_CHUNK (csave, VARID_START_SECTOR,	m_StartSector);
-		WRITE_MICRO_CHUNK (csave, VARID_DEST_SECTOR,		m_DestSector);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_START_SECTOR,	m_StartSector);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_DEST_SECTOR,	m_DestSector);
 		WRITE_MICRO_CHUNK (csave, VARID_PATH_OBJECT,		m_PathObject);
 		WRITE_MICRO_CHUNK (csave, VARID_PRIORITY,			m_Priority);
 
 		PathSolveClass *this_ptr = this;
-		WRITE_MICRO_CHUNK (csave, VARID_OLD_PTR,			this_ptr);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_OLD_PTR,		this_ptr);
 
 	csave.End_Chunk ();
 	return ;
@@ -1915,9 +1917,10 @@ PathSolveClass::On_Post_Load (void)
 void
 PathSolveClass::Load_Variables (ChunkLoadClass &cload)
 {
-	PathSolveClass *old_ptr = NULL;
 	m_StartSector	= NULL;
 	m_DestSector	= NULL;
+
+	uint32 old_ptr = 0;
 
 	//
 	//	Loop through all the microchunks that define the variables
@@ -1938,9 +1941,8 @@ PathSolveClass::Load_Variables (ChunkLoadClass &cload)
 	//
 	//	Register our old ptr so other objects can remap to us
 	//
-	if (old_ptr != NULL) {
-		SaveLoadSystemClass::Register_Pointer (old_ptr, this);
-	}
+	if (old_ptr)
+		SaveLoadSystemClass::Register_Pointer(old_ptr, this);
 
 	return ;
 }

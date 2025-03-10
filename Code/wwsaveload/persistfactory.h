@@ -34,13 +34,7 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-
-#if defined(_MSC_VER)
 #pragma once
-#endif
-
-
-
 
 #ifndef PERSISTFACTORY_H
 #define PERSISTFACTORY_H
@@ -49,6 +43,7 @@
 #include "bittype.h"
 #include "chunkio.h"
 #include "wwdebug.h"
+#include "persist.h"
 #include "saveload.h"
 
 class PersistClass;
@@ -106,8 +101,8 @@ public:
 };
 
 
-template<class T, int CHUNKID> PersistClass * 
-SimplePersistFactoryClass<T,CHUNKID>::Load(ChunkLoadClass & cload) const 
+template<class T, int CHUNKID>
+PersistClass* SimplePersistFactoryClass<T,CHUNKID>::Load(ChunkLoadClass & cload) const 
 {
 	T * new_obj = new T;
 	uint32 old_obj = 0;
@@ -127,12 +122,12 @@ SimplePersistFactoryClass<T,CHUNKID>::Load(ChunkLoadClass & cload) const
 }
 
 
-template<class T, int CHUNKID> void
-SimplePersistFactoryClass<T,CHUNKID>::Save(ChunkSaveClass & csave,PersistClass * obj) const 
+template<class T, int CHUNKID>
+void SimplePersistFactoryClass<T,CHUNKID>::Save(ChunkSaveClass & csave,PersistClass * obj) const 
 {
 	const uint32 objptr = SaveLoadSystemClass::Convert_Pointer(obj);
 	csave.Begin_Chunk(SIMPLEFACTORY_CHUNKID_OBJPOINTER);
-	csave.Write(&objptr,sizeof(uint32));
+	csave.Write(&objptr, sizeof(objptr));
 	csave.End_Chunk();
 
 	csave.Begin_Chunk(SIMPLEFACTORY_CHUNKID_OBJDATA);

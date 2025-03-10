@@ -203,10 +203,10 @@ WaypathClass::Get_Factory (void) const
 bool
 WaypathClass::Save (ChunkSaveClass &csave)
 {
-	csave.Begin_Chunk (CHUNKID_VARIABLES);
+	csave.Begin_Chunk (CHUNKID_VARIABLES);		
 				
 		WaypathClass *this_ptr = this;
-		WRITE_MICRO_CHUNK (csave, VARID_OLD_PTR,	this_ptr);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_OLD_PTR,	this_ptr);
 		WRITE_MICRO_CHUNK (csave, VARID_FLAGS,		m_Flags);
 		WRITE_MICRO_CHUNK (csave, VARID_ID,			m_ID);		
 
@@ -216,7 +216,7 @@ WaypathClass::Save (ChunkSaveClass &csave)
 		//
 		for (int index = 0; index < m_Waypoints.Count (); index ++) {
 			WaypointClass *waypoint = m_Waypoints[index];
-			WRITE_MICRO_CHUNK (csave, VARID_WAYPOINT_PTR, waypoint);
+			WRITE_PTR_MICRO_CHUNK (csave, VARID_WAYPOINT_PTR, waypoint);
 		}
 
 	csave.End_Chunk ();
@@ -271,9 +271,9 @@ WaypathClass::Load_Variables (ChunkLoadClass &cload)
 				//	Read the old waypoint ptr from the chunk and add it to our
 				// list.  We will remap it later.
 				//				
-				WaypointClass *waypoint = NULL;
-				cload.Read (&waypoint, sizeof (waypoint));				
-				m_Waypoints.Add (waypoint);				
+				uint32 waypoint_id = 0;
+				cload.Read (&waypoint_id, sizeof (waypoint_id));
+				m_Waypoints.Add(reinterpret_cast<WaypointClass* const>(uintptr(waypoint_id)));
 			}
 			break;
 
@@ -283,8 +283,8 @@ WaypathClass::Load_Variables (ChunkLoadClass &cload)
 				//	Read the old pointer from the chunk and submit it
 				// to the remapping system.
 				//				
-				WaypathClass *old_ptr = NULL;
-				cload.Read (&old_ptr, sizeof (old_ptr));
+				uint32 old_ptr = 0;
+				cload.Read (&old_ptr, sizeof(old_ptr));
 				SaveLoadSystemClass::Register_Pointer (old_ptr, this);
 			}
 			break;
@@ -297,7 +297,7 @@ WaypathClass::Load_Variables (ChunkLoadClass &cload)
 	//	Register each of the pointers in our waypoint list for remapping
 	//
 	for (int index = 0; index < m_Waypoints.Count (); index ++) {
-		REQUEST_POINTER_REMAP ((void **)&m_Waypoints[index]);
+		REQUEST_POINTER_REMAP (uint32(uintptr(m_Waypoints[index])), (void **)&m_Waypoints[index]);
 	}
 
 	return true;

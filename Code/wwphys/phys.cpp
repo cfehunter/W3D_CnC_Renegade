@@ -467,11 +467,13 @@ bool PhysClass::Save (ChunkSaveClass &csave)
 
 	csave.Begin_Chunk(PHYS_CHUNK_VARIABLES);
 	// (gth) not saving observer pointers any more!
-	WRITE_MICRO_CHUNK(csave,PHYS_VARIABLE_CULLABLE_PTR,cullable_ptr);
-	WRITE_MICRO_CHUNK(csave,PHYS_VARIABLE_WIDGETUSER_PTR,widgetuser_ptr);
-	WRITE_MICRO_CHUNK(csave,PHYS_VARIABLE_EDITABLE_PTR,editable_ptr);
+	WRITE_PTR_MICRO_CHUNK(csave,PHYS_VARIABLE_CULLABLE_PTR,cullable_ptr);
+	WRITE_PTR_MICRO_CHUNK(csave,PHYS_VARIABLE_WIDGETUSER_PTR,widgetuser_ptr);
+	WRITE_PTR_MICRO_CHUNK(csave,PHYS_VARIABLE_EDITABLE_PTR,editable_ptr);
 	WRITE_MICRO_CHUNK(csave,PHYS_VARIABLE_FLAGS,Flags);
-	WRITE_MICRO_CHUNK(csave,PHYS_VARIABLE_INSTANCEID,InstanceID);	
+	WRITE_MICRO_CHUNK(csave,PHYS_VARIABLE_INSTANCEID,InstanceID);
+
+	//#CFE_TODO: Pretty sure this can be replaced with WRITE_MICRO_CHUNK_WWSTRING. Check when functional
 	if (Name.Get_Length() > 0) {
 		csave.Begin_Micro_Chunk(PHYS_VARIABLE_NAME);
 		WWASSERT(Name.Get_Length()+1 < 255);
@@ -496,9 +498,9 @@ bool PhysClass::Save (ChunkSaveClass &csave)
 bool PhysClass::Load (ChunkLoadClass &cload)
 {
 	PersistFactoryClass * factory = NULL;
-	CullableClass * cullable_ptr = NULL;
-	WidgetUserClass * widgetuser_ptr = NULL;
-	EditableClass * editable_ptr = NULL;
+	uint32 cullable_id = 0;
+	uint32 widgetuser_id = 0;
+	uint32 editable_id = 0;
 	int defid = -1;
 	char tmpstring[256];
 	tmpstring[0] = 0;
@@ -506,15 +508,15 @@ bool PhysClass::Load (ChunkLoadClass &cload)
 
 	while (cload.Open_Chunk()) {
 		
-		switch(cload.Cur_Chunk_ID()) 
+		switch(cload.Cur_Chunk_ID())
 		{
 			case PHYS_CHUNK_VARIABLES:
 				while (cload.Open_Micro_Chunk()) {
 					switch(cload.Cur_Micro_Chunk_ID()) {
 						// (gth) not saving observer pointers any more!
-						READ_MICRO_CHUNK(cload,PHYS_VARIABLE_CULLABLE_PTR,cullable_ptr);
-						READ_MICRO_CHUNK(cload,PHYS_VARIABLE_WIDGETUSER_PTR,widgetuser_ptr);
-						READ_MICRO_CHUNK(cload,PHYS_VARIABLE_EDITABLE_PTR,editable_ptr);
+						READ_MICRO_CHUNK(cload,PHYS_VARIABLE_CULLABLE_PTR, cullable_id);
+						READ_MICRO_CHUNK(cload,PHYS_VARIABLE_WIDGETUSER_PTR, widgetuser_id);
+						READ_MICRO_CHUNK(cload,PHYS_VARIABLE_EDITABLE_PTR, editable_id);
 						READ_MICRO_CHUNK(cload,PHYS_VARIABLE_FLAGS,Flags);
 						READ_MICRO_CHUNK(cload,PHYS_VARIABLE_DEFID,defid);
 						READ_MICRO_CHUNK(cload,PHYS_VARIABLE_INSTANCEID,InstanceID);
@@ -543,9 +545,9 @@ bool PhysClass::Load (ChunkLoadClass &cload)
 				break;
 		}
 		
-		if (cullable_ptr != NULL) {
-			SaveLoadSystemClass::Register_Pointer(cullable_ptr,(CullableClass *)this);
-		}
+		if (cullable_id)
+			SaveLoadSystemClass::Register_Pointer(cullable_id,(CullableClass *)this);
+
 		cload.Close_Chunk();
 	}
 
@@ -571,25 +573,18 @@ bool PhysClass::Load (ChunkLoadClass &cload)
 	Set_Model(render_model);
 	REF_PTR_RELEASE(render_model);
 
-	/*
-	** Ask that our Observer pointer is re-mapped
-	*/
-	if (Observer != NULL) {
-		REQUEST_POINTER_REMAP((void**)&Observer);
-	}
-	
+		
 	/*
 	** Register all of the multiple-inheritance versions of our this pointer
 	*/
-	if (cullable_ptr != NULL) {
-		SaveLoadSystemClass::Register_Pointer(cullable_ptr,(CullableClass *)this);
-	}
-	if (widgetuser_ptr != NULL) {
-		SaveLoadSystemClass::Register_Pointer(widgetuser_ptr,(WidgetUserClass *)this);
-	}
-	if (editable_ptr != NULL) {
-		SaveLoadSystemClass::Register_Pointer(editable_ptr,(EditableClass *)this);
-	}
+	if (cullable_id)
+		SaveLoadSystemClass::Register_Pointer(cullable_id,(CullableClass *)this);
+
+	if (widgetuser_id)
+		SaveLoadSystemClass::Register_Pointer(widgetuser_id,(WidgetUserClass *)this);
+
+	if (editable_id)
+		SaveLoadSystemClass::Register_Pointer(editable_id,(EditableClass *)this);
 
 	/*
 	** Mark our static lighting cache dirty

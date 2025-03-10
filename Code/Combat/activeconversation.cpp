@@ -665,8 +665,8 @@ ActiveConversationClass::Save (ChunkSaveClass &csave)
 		//
 		//	Save our current pointer so we can remap it on load
 		//
-		ActiveConversationClass *old_ptr = this;
-		WRITE_MICRO_CHUNK (csave, VARID_OLD_PTR, old_ptr);
+		ActiveConversationClass* old_ptr = this;
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_OLD_PTR, old_ptr);
 	
 	csave.End_Chunk ();
 

@@ -483,7 +483,7 @@ void CompressedVisTableClass::Load (void* hfile)
 		/*
 		** Read the buffer size
 		*/
-		uint32 dwbytes_read = 0L;
+		DWORD dwbytes_read = 0L;
 		::ReadFile ((HANDLE)hfile, &BufferSize, sizeof (BufferSize), &dwbytes_read, NULL);
 
 		/*
@@ -503,7 +503,7 @@ void CompressedVisTableClass::Save (void* hfile)
 		/*
 		** Write the buffer size
 		*/
-		uint32 dwbytes_written = 0L;
+		DWORD dwbytes_written = 0L;
 		::WriteFile ((HANDLE)hfile, &BufferSize, sizeof (BufferSize), &dwbytes_written, NULL);
 
 		/*

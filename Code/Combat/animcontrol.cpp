@@ -549,7 +549,7 @@ AnimControlClass::~AnimControlClass( void )
 bool 	AnimControlClass::Save( ChunkSaveClass & csave )
 {
 	csave.Begin_Chunk( CHUNKID_VARIABLES );
-		WRITE_MICRO_CHUNK( csave, MICROCHUNKID_MODEL_PTR, Model );
+	WRITE_PTR_MICRO_CHUNK(csave, MICROCHUNKID_MODEL_PTR, Model);
 	csave.End_Chunk();
 
 	return true;
@@ -557,6 +557,8 @@ bool 	AnimControlClass::Save( ChunkSaveClass & csave )
 
 bool	AnimControlClass::Load( ChunkLoadClass &cload )
 {
+	uint32 old_model = 0;
+
 	while (cload.Open_Chunk()) {
 		switch(cload.Cur_Chunk_ID()) {
 
@@ -565,7 +567,7 @@ bool	AnimControlClass::Load( ChunkLoadClass &cload )
 				WWASSERT( Model == NULL );
 				while (cload.Open_Micro_Chunk()) {
 					switch(cload.Cur_Micro_Chunk_ID()) {
-						READ_MICRO_CHUNK( cload, MICROCHUNKID_MODEL_PTR, Model );
+						READ_MICRO_CHUNK( cload, MICROCHUNKID_MODEL_PTR, old_model);
 
 						default:
 							Debug_Say(( "Unrecognized AnimControl Variable chunkID\n" ));
@@ -574,8 +576,8 @@ bool	AnimControlClass::Load( ChunkLoadClass &cload )
 					cload.Close_Micro_Chunk();
 				}
 
-				if ( Model != NULL ) {
-					REQUEST_REF_COUNTED_POINTER_REMAP( (RefCountClass **)&Model );
+				if (old_model) {
+					REQUEST_REF_COUNTED_POINTER_REMAP(old_model, (RefCountClass **)&Model );
 				} else {
 					Debug_Say(( "Loaded NULL model\n" ));
 				}

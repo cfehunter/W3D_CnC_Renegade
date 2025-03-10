@@ -43,28 +43,35 @@
 
 #include <cstdint>
 
-typedef unsigned char	uint8;
-typedef unsigned short	uint16;
-typedef unsigned long	uint32;
-typedef unsigned int    uint;
+using uint8 = uint8_t;
+using uint16 = uint16_t;
+using uint32 = uint32_t;
+using uint64 = uint64_t;
+using uint = uint32;
 
-typedef signed char		sint8;
-typedef signed short		sint16;
-typedef signed long		sint32;
-typedef signed int      sint;
+using sint8 = int8_t;
+using sint16 = int16_t;
+using sint32 = int32_t;
+using sint64 = int64_t;
+using sint = sint32;
 
-typedef float				float32;
-typedef double				float64;
+using int8 = sint8;
+using int16 = sint16;
+using int32 = sint32;
+using int64 = sint64;
 
-typedef unsigned long   DWORD;
-typedef unsigned short	WORD;
-typedef unsigned char   BYTE;
-typedef int             BOOL;
-typedef unsigned short	USHORT;
-typedef const char *		LPCSTR;
-typedef unsigned int    UINT;
-typedef unsigned long   ULONG;
+using float32 = float;
+using float64 = double;
 
-typedef uintptr_t uintptr;
+using DWORD = unsigned long;
+using WORD = unsigned short;
+using BYTE = uint8;
+using BOOL = int;
+using USHORT = uint16;
+using LPCSTR = const char*;
+using UINT = unsigned int;
+using ULONG = unsigned long;
+
+using uintptr = uintptr_t;
 
 #endif //BITTYPE_H

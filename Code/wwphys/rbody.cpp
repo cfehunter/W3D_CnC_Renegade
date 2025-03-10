@@ -2099,7 +2099,7 @@ bool RigidBodyClass::Save (ChunkSaveClass &csave)
 	
 	ODESystemClass * ode_ptr = (ODESystemClass *)this;
 	csave.Begin_Chunk(RBODY_CHUNK_VARIABLES);
-	WRITE_MICRO_CHUNK(csave,RBODY_VARIABLE_ODESYSTEM_PTR,ode_ptr);
+	WRITE_PTR_MICRO_CHUNK(csave,RBODY_VARIABLE_ODESYSTEM_PTR,ode_ptr);
 	WRITE_MICRO_CHUNK(csave,RBODY_VARIABLE_IBODY,IBody);
 	WRITE_MICRO_CHUNK(csave,RBODY_VARIABLE_IBODYINV,IBodyInv);
 	WRITE_MICRO_CHUNK(csave,RBODY_VARIABLE_STATE_POSITION,State.Position);
@@ -2113,7 +2113,7 @@ bool RigidBodyClass::Save (ChunkSaveClass &csave)
 
 bool RigidBodyClass::Load (ChunkLoadClass &cload)
 {
-	ODESystemClass * odesys = NULL;
+	uint32 ode_id = 0;
 
 	while (cload.Open_Chunk()) {
 		
@@ -2127,7 +2127,7 @@ bool RigidBodyClass::Load (ChunkLoadClass &cload)
 			
 				while (cload.Open_Micro_Chunk()) {
 					switch(cload.Cur_Micro_Chunk_ID()) {
-						READ_MICRO_CHUNK(cload,RBODY_VARIABLE_ODESYSTEM_PTR,odesys);
+						READ_MICRO_CHUNK(cload,RBODY_VARIABLE_ODESYSTEM_PTR, ode_id);
 						READ_MICRO_CHUNK(cload,RBODY_VARIABLE_IBODY,IBody);
 						READ_MICRO_CHUNK(cload,RBODY_VARIABLE_IBODYINV,IBodyInv);
 						READ_MICRO_CHUNK(cload,RBODY_VARIABLE_STATE_POSITION,State.Position);
@@ -2150,9 +2150,8 @@ bool RigidBodyClass::Load (ChunkLoadClass &cload)
 	}
 
 	
-	if (odesys != NULL) {
-		SaveLoadSystemClass::Register_Pointer(odesys,(ODESystemClass *)this);
-	}
+	if (ode_id)
+		SaveLoadSystemClass::Register_Pointer(ode_id, (ODESystemClass *)this);
 
 	SaveLoadSystemClass::Register_Post_Load_Callback(this);
 	Update_Auxiliary_State();

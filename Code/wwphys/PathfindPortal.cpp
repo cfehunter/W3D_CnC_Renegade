@@ -95,7 +95,7 @@ PathfindPortalClass::Save (ChunkSaveClass &csave)
 		WRITE_MICRO_CHUNK (csave, VARID_ID,					m_ID);		
 		
 		PathfindPortalClass *this_ptr = this;
-		WRITE_MICRO_CHUNK (csave, VARID_OLD_PTR, this_ptr);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_OLD_PTR, this_ptr);
 
 	csave.End_Chunk ();
 
@@ -141,7 +141,7 @@ PathfindPortalClass::Load (ChunkLoadClass &cload)
 bool
 PathfindPortalClass::Load_Variables (ChunkLoadClass &cload)
 {
-	PathfindPortalClass *old_ptr = NULL;
+	uint32 old_ptr = 0;
 
 	//
 	//	Read all the micro chunks...
@@ -166,9 +166,8 @@ PathfindPortalClass::Load_Variables (ChunkLoadClass &cload)
 	//
 	//	Register our old ptr so other objects can remap to us
 	//
-	if (old_ptr != NULL) {
-		SaveLoadSystemClass::Register_Pointer (old_ptr, this);
-	}
+	if (old_ptr)
+		SaveLoadSystemClass::Register_Pointer(old_ptr, this);
 
 	return true;
 }
@@ -193,11 +192,11 @@ PathfindActionPortalClass::Save (ChunkSaveClass &csave)
 	//	Save each variable to its own micro-chunk
 	//
 	csave.Begin_Chunk (CHUNKID_VARIABLES);
-		WRITE_MICRO_CHUNK (csave, ACTION_VARID_DESTINATION,	m_Destination);
-		WRITE_MICRO_CHUNK (csave, ACTION_VARID_MECHANISM_ID,	m_MechanismID);
-		WRITE_MICRO_CHUNK (csave, ACTION_VARID_ACTION_ID,		m_ActionID);
-		WRITE_MICRO_CHUNK (csave, ACTION_VARID_EXIT_PORTAL,	m_ExitPortal);
-		WRITE_MICRO_CHUNK (csave, ACTION_VARID_ENTER_PORTAL,	m_EnterPortal);
+		WRITE_MICRO_CHUNK (csave, ACTION_VARID_DESTINATION, m_Destination);
+		WRITE_MICRO_CHUNK (csave, ACTION_VARID_MECHANISM_ID, m_MechanismID);
+		WRITE_MICRO_CHUNK (csave, ACTION_VARID_ACTION_ID, m_ActionID);
+		WRITE_PTR_MICRO_CHUNK (csave, ACTION_VARID_EXIT_PORTAL, m_ExitPortal);
+		WRITE_PTR_MICRO_CHUNK (csave, ACTION_VARID_ENTER_PORTAL, m_EnterPortal);
 	csave.End_Chunk ();
 
 	return true;
@@ -247,17 +246,20 @@ PathfindActionPortalClass::Load (ChunkLoadClass &cload)
 bool
 PathfindActionPortalClass::Load_Variables (ChunkLoadClass &cload)
 {
+	uint32 old_exit_portal = 0;
+	uint32 old_enter_portal = 0;
+
 	//
 	//	Read all the micro chunks...
 	//
 	while (cload.Open_Micro_Chunk ()) {		
 		switch (cload.Cur_Micro_Chunk_ID ()) {			
 			
-			READ_MICRO_CHUNK (cload, ACTION_VARID_DESTINATION,		m_Destination);
-			READ_MICRO_CHUNK (cload, ACTION_VARID_MECHANISM_ID,	m_MechanismID);
-			READ_MICRO_CHUNK (cload, ACTION_VARID_ACTION_ID,		m_ActionID);
-			READ_MICRO_CHUNK (cload, ACTION_VARID_EXIT_PORTAL,		m_ExitPortal);
-			READ_MICRO_CHUNK (cload, ACTION_VARID_ENTER_PORTAL,	m_EnterPortal);
+			READ_MICRO_CHUNK (cload, ACTION_VARID_DESTINATION, m_Destination);
+			READ_MICRO_CHUNK (cload, ACTION_VARID_MECHANISM_ID, m_MechanismID);
+			READ_MICRO_CHUNK (cload, ACTION_VARID_ACTION_ID, m_ActionID);
+			READ_MICRO_CHUNK (cload, ACTION_VARID_EXIT_PORTAL, old_exit_portal);
+			READ_MICRO_CHUNK (cload, ACTION_VARID_ENTER_PORTAL, old_enter_portal);
 
 			default:
 				WWASSERT (0);
@@ -274,13 +276,11 @@ PathfindActionPortalClass::Load_Variables (ChunkLoadClass &cload)
 	// problem, we don't want a reference on them.  This is why we don't
 	// do a ref-counted pointer remap.
 	//
-	if (m_EnterPortal != NULL) {
-		REQUEST_POINTER_REMAP ((void **)&m_EnterPortal);
-	}
+	if (old_enter_portal)
+		REQUEST_POINTER_REMAP (old_enter_portal, (void **)&m_EnterPortal);
 
-	if (m_ExitPortal != NULL) {
-		REQUEST_POINTER_REMAP ((void **)&m_ExitPortal);
-	}
+	if (old_exit_portal)
+		REQUEST_POINTER_REMAP (old_exit_portal, (void **)&m_ExitPortal);
 
 	return true;
 }

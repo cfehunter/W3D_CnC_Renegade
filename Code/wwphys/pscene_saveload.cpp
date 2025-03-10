@@ -561,8 +561,7 @@ void PhysicsSceneClass::Load_Sun_Light(ChunkLoadClass & cload)
 void PhysicsSceneClass::Save_Sun_Light(ChunkSaveClass & csave)
 {
 	WWASSERT(SunLight != NULL);
-	IOSunLightStruct sun;
-	memset(&sun,0,sizeof(sun));
+	IOSunLightStruct sun{};
 	
 	sun.Enabled = (UseSun ? 1 : 0);
 	sun.Yaw = SunYaw;
@@ -575,7 +574,7 @@ void PhysicsSceneClass::Save_Sun_Light(ChunkSaveClass & csave)
 	sun.Color.Y = c.Y;
 	sun.Color.Z = c.Z;
 	
-	csave.Write(&sun,sizeof(sun));	
+	csave.Write(&sun,sizeof(sun));
 }	
 
 
@@ -655,8 +654,9 @@ void PhysicsSceneClass::Save_Static_Object_States(ChunkSaveClass & csave)
 			csave.End_Chunk();
 
 			csave.Begin_Chunk(PSCENE_DD_CHUNK_STATIC_OLD_PTR);
-			void * old_ptr = it.Peek_Obj();
-			csave.Write(&old_ptr,sizeof(void *));
+			const uint32 obj_id = SaveLoadSystemClass::Convert_Pointer(it.Peek_Obj());
+			csave.Write(&obj_id, sizeof(obj_id));
+
 			csave.End_Chunk();
 
 			csave.Begin_Chunk(PSCENE_DD_CHUNK_STATIC_OBJECT_STATE);
@@ -680,8 +680,8 @@ void PhysicsSceneClass::Load_Static_Object_States(ChunkLoadClass & cload)
 
 		cload.Open_Chunk();
 		WWASSERT(cload.Cur_Chunk_ID()==PSCENE_DD_CHUNK_STATIC_OLD_PTR);
-		void * old_ptr;
-		cload.Read(&old_ptr,sizeof(void *));
+		uint32 old_ptr;
+		cload.Read(&old_ptr,sizeof(old_ptr));
 		SaveLoadSystemClass::Register_Pointer(old_ptr, sphys);
 		cload.Close_Chunk();
 

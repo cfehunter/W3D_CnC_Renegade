@@ -69,14 +69,14 @@ void PointerRemapClass::Process(void)
 {
 	if ( PointerRequestTable.Count() > 0 )
 	{
-		WWASSERT(PointerRemap.size() > 0);
+		WWASSERT(!IDToPointerMapping.empty());
 		Process_Request_Table(PointerRequestTable,false);
 	}
 
 	// remap the ref-counted pointers
 	if ( RefCountRequestTable.Count() > 0 )
 	{
-		WWASSERT(PointerRemap.Count() > 0);
+		WWASSERT(!IDToPointerMapping.empty());
 		Process_Request_Table(RefCountRequestTable,true);
 	}
 }

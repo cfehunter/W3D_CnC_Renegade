@@ -1480,7 +1480,7 @@ PathClass::Save (ChunkSaveClass &csave)
 		WRITE_MICRO_CHUNK (csave, VARID_TOTAL_DIST,				m_TotalDist);
 		
 		PathClass *this_ptr = this;
-		WRITE_MICRO_CHUNK (csave, VARID_OLD_PTR,					this_ptr);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_OLD_PTR,			this_ptr);
 
 		//
 		//	Save each of the action nodes for this path
@@ -1538,10 +1538,9 @@ PathClass::Load (ChunkLoadClass &cload)
 //	Load_Variables
 //
 ///////////////////////////////////////////////////////////////////////
-void
-PathClass::Load_Variables (ChunkLoadClass &cload)
+void PathClass::Load_Variables (ChunkLoadClass &cload)
 {
-	PathClass *old_ptr = NULL;
+	uint32 old_ptr = 0;
 
 	//
 	//	Loop through all the microchunks that define the variables
@@ -1586,9 +1585,8 @@ PathClass::Load_Variables (ChunkLoadClass &cload)
 	//
 	//	Register our old ptr so other objects can remap to us
 	//
-	if (old_ptr != NULL) {
+	if (old_ptr)
 		SaveLoadSystemClass::Register_Pointer( old_ptr, this );
-	}
 
 	return ;
 }

@@ -145,7 +145,7 @@ WaypointClass::Save (ChunkSaveClass &csave)
 	csave.Begin_Chunk (CHUNKID_VARIABLES);
 				
 		WaypointClass *this_ptr = this;
-		WRITE_MICRO_CHUNK (csave, VARID_OLD_PTR,		this_ptr);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_OLD_PTR,		this_ptr);
 		WRITE_MICRO_CHUNK (csave, VARID_FLAGS,			m_Flags);		
 		WRITE_MICRO_CHUNK (csave, VARID_POSITION,		m_Position);		
 		WRITE_MICRO_CHUNK (csave, VARID_ID,				m_ID);
@@ -204,7 +204,7 @@ WaypointClass::Load_Variables (ChunkLoadClass &cload)
 				//	Read the old pointer from the chunk and submit it
 				// to the remapping system.
 				//				
-				WaypointClass *old_ptr = NULL;
+				uint32 old_ptr = 0;
 				cload.Read (&old_ptr, sizeof (old_ptr));
 				SaveLoadSystemClass::Register_Pointer (old_ptr, this);
 			}
