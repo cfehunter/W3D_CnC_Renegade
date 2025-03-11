@@ -51,6 +51,7 @@
 #include "wwmath.h"
 #include "quat.h"
 #include "wwmath.h"
+#include <string> // NOTE: included for memcpy
 //#include <stdio.h>
 //#include <Windows.h>
 // Static Table, for Adaptive Delta Decompressor

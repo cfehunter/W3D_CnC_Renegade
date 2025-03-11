@@ -300,7 +300,7 @@ static void Log_Textures(bool inited,unsigned& total_count, unsigned& total_mem)
 		if (tex->Is_Initialized()!=inited) continue;
 
 		D3DSURFACE_DESC desc;
-		IDirect3DTexture8* d3d_texture=tex->Peek_DX8_Texture();
+		IDirect3DTexture9* d3d_texture=tex->Peek_DX8_Texture();
 		if (!d3d_texture) continue;
 		DX8_ErrorCode(d3d_texture->GetLevelDesc(0,&desc));
 
@@ -327,7 +327,7 @@ static void Log_Textures(bool inited,unsigned& total_count, unsigned& total_mem)
 		case D3DFMT_X8L8V8U8: tex_format="D3DFMT_X8L8V8U8"; break;
 		case D3DFMT_Q8W8V8U8: tex_format="D3DFMT_Q8W8V8U8"; break;
 		case D3DFMT_V16U16: tex_format="D3DFMT_V16U16"; break;
-		case D3DFMT_W11V11U10: tex_format="D3DFMT_W11V11U10"; break;
+		//case D3DFMT_W11V11U10: tex_format="D3DFMT_W11V11U10"; break;
 		case D3DFMT_UYVY: tex_format="D3DFMT_UYVY"; break;
 		case D3DFMT_YUY2: tex_format="D3DFMT_YUY2"; break;
 		case D3DFMT_DXT1: tex_format="D3DFMT_DXT1"; break;
