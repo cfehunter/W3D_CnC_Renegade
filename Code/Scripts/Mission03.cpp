@@ -41,6 +41,18 @@
 #include <stdio.h>
 #include "Mission3.h"
 
+namespace Mission3Var
+{
+	static constexpr const char* KlaxonNames[2] = {
+					"Klaxon Warning",
+					"Klaxon Info"
+	};
+
+	// This mission in particular abused the int param to Custom events and passed pointers to stack variables.
+	// Use a static instead.
+	static int HACK_param_val = 0;
+}
+
 DECLARE_SCRIPT(M03_Objective_Controller, "")  //1100004
 {
 	enum {WEATHER_TIMER};
@@ -1602,7 +1614,7 @@ DECLARE_SCRIPT(M03_CommCenter_SateliteDish_Controller_JDG, "")
 	
 		if (param == play_sounds)
 		{
-			char *soundName = "Satelite Dish Moving Twiddler";
+			const char *soundName = "Satelite Dish Moving Twiddler";
 			Vector3 soundPosition (-110.26f, 41.30f, 19.37f);
 
 			Commands->Create_Sound ( soundName, soundPosition, obj );
@@ -1708,7 +1720,7 @@ DECLARE_SCRIPT(M03_Ambient_Birdcall_Controller_JDG, "")
 	
 		if (param == play_birdcall)
 		{
-			char *soundName = "Birdcall Twiddler";
+			const char *soundName = "Birdcall Twiddler";
 			Vector3 soundPosition;
 
 			GameObject * star = Commands->Get_A_Star (Vector3(0.0f,0.0f,0.0f));
@@ -1852,12 +1864,8 @@ DECLARE_SCRIPT(M03_Announce_PowerPlant_Controller_JDG, "")
 
 		else if (param == play_klaxon)
 		{
-			char *klaxonNames[2] = {
-				"Klaxon Warning",
-				"Klaxon Info"
-			};
-			
-			char *klaxonName = klaxonNames[klaxon];
+			const auto& klaxonNames = Mission3Var::KlaxonNames;
+			const char *klaxonName = klaxonNames[klaxon];
 
 			Commands->Create_Sound ( klaxonName, spkr_1_spot, obj );
 			Commands->Create_Sound ( klaxonName, spkr_2_spot, obj );
@@ -1875,7 +1883,7 @@ DECLARE_SCRIPT(M03_Announce_PowerPlant_Controller_JDG, "")
 
 		else if (param == play_sound)
 		{
-			char *sounds[19] = {
+			static constexpr const char *sounds[19] = {
 				"01-i000e",
 				"01-i002e",
 				"01-i004e",
@@ -1896,7 +1904,7 @@ DECLARE_SCRIPT(M03_Announce_PowerPlant_Controller_JDG, "")
 				"01-i078e",
 				"01-i022e"
 			};
-			char *soundName;
+			const char *soundName;
 			soundName = sounds[sound];
 			Commands->Create_Sound ( soundName, spkr_1_spot, obj );
 			Commands->Create_Sound ( soundName, spkr_2_spot, obj );
@@ -2276,12 +2284,8 @@ DECLARE_SCRIPT(M03_Announce_Refinery_Controller_JDG, "")
 
 		else if (param == play_klaxon)
 		{
-			char *klaxonNames[2] = {
-				"Klaxon Warning",
-				"Klaxon Info"
-			};
-
-			char *klaxonName = klaxonNames[klaxon];
+			const auto& klaxonNames = Mission3Var::KlaxonNames;
+			const char *klaxonName = klaxonNames[klaxon];
 
 			Commands->Create_Sound ( klaxonName, spkr_1_spot, obj );
 			Commands->Create_Sound ( klaxonName, spkr_2_spot, obj );
@@ -2308,7 +2312,7 @@ DECLARE_SCRIPT(M03_Announce_Refinery_Controller_JDG, "")
 
 		else if (param == play_sound)
 		{
-			char *sounds[28] = {
+			static constexpr const char *sounds[28] = {
 				"01-i010E",
 				"01-i022E",
 				"01-i032E",
@@ -2339,7 +2343,7 @@ DECLARE_SCRIPT(M03_Announce_Refinery_Controller_JDG, "")
 				"01-i098E"
 			};
 
-			char *soundName = sounds[sound];
+			const char *soundName = sounds[sound];
 
 			Commands->Create_Sound ( soundName, spkr_1_spot, obj );
 			Commands->Create_Sound ( soundName, spkr_2_spot, obj );
@@ -2767,12 +2771,8 @@ DECLARE_SCRIPT(M03_Announce_CommCenter_Controller_JDG, "")
 
 		else if (param == play_klaxon)
 		{
-			char *klaxonNames[2] = {
-				"Klaxon Warning",
-				"Klaxon Info"
-			};
-
-			char *klaxonName = klaxonNames[klaxon];
+			const auto& klaxonNames = Mission3Var::KlaxonNames;
+			const char* klaxonName = klaxonNames[klaxon];
 
 			Commands->Create_Sound ( klaxonName, spkr_1_spot, obj );
 			Commands->Create_Sound ( klaxonName, spkr_2_spot, obj );
@@ -2789,7 +2789,7 @@ DECLARE_SCRIPT(M03_Announce_CommCenter_Controller_JDG, "")
 
 		else if (param == play_sound)
 		{
-			char *sounds[15] = {
+			static constexpr const char *sounds[15] = {
 				"01-I022E",
 				"01-I028E",
 				"01-I030E",
@@ -2807,7 +2807,7 @@ DECLARE_SCRIPT(M03_Announce_CommCenter_Controller_JDG, "")
 				"01-I066E"
 			};
 
-			char *soundName = sounds[sound];
+			const char *soundName = sounds[sound];
 
 			Commands->Create_Sound ( soundName, spkr_1_spot, obj );
 			Commands->Create_Sound ( soundName, spkr_2_spot, obj );
@@ -3090,19 +3090,13 @@ DECLARE_SCRIPT(M03_Commando_Script, "Controller_ID:int")
 	{
 		if (type == 3000)
 		{
-			int *occupied = (int *)param;
-			if (occupied != NULL)
-			{
-				(*occupied) = has_escort ? 1 : 0;
-			}
+			Mission3Var::HACK_param_val = has_escort ? 1 : 0;
+
 			if (has_escort && (Commands->Get_ID(sender) == follower_id))
 			{
 				has_escort = false;
 				follower_id = 0;
-				if (occupied != NULL)
-				{
-					(*occupied) = -1;
-				}
+				Mission3Var::HACK_param_val = -1;
 			}
 			else if (!has_escort)
 			{
@@ -3576,8 +3570,10 @@ DECLARE_SCRIPT(M03_Chinook_Spawned_Soldier_GDI, "Area:int, Send_Type_When_Killed
 
 	void Poked(GameObject * obj, GameObject * poker)
 	{
-		int has_escort = 1;
-		Commands->Send_Custom_Event(obj, poker, 3000, (int)&has_escort, 0.0f);
+		// CFE NOTE: This was previously passing has_escort by pointer packed into the param. Using a static instead.
+		Mission3Var::HACK_param_val = 0;
+		Commands->Send_Custom_Event(obj, poker, 3000, 0, 0.0f);
+		const int has_escort = Mission3Var::HACK_param_val;
 		if (has_escort == 1)
 		{
 
@@ -3924,7 +3920,7 @@ DECLARE_SCRIPT(M03_Flyover_Controller, "")
 
 	void Timer_Expired(GameObject * obj, int timer_id)
 	{
-		char *flyovers[17] = 
+		static constexpr const char* flyovers[17] =
 		{
 			"A-10_1.txt",
 			"A-10_2.txt",
@@ -4482,38 +4478,36 @@ DECLARE_SCRIPT(M03_Reinforce_Area, "")
 	{
 		if (type == 5000)
 		{
-			int *area = (int *)param;
 			if (beach_active)
 			{
-				*area = 0;
+				Mission3Var::HACK_param_val = 0;
 			}
 			else if (inlet_active)
 			{
-				*area = 1;
+				Mission3Var::HACK_param_val = 1;
 			}
 			else if (base_active)
 			{
-				*area = 2;
+				Mission3Var::HACK_param_val = 2;
 			}
 			else
 			{
-				*area = -1;
+				Mission3Var::HACK_param_val = -1;
 			}
 		}
 		if (type == 6300)
 		{
-			int *target_count = (int *)param;
 			if (beach_active)
 			{
-				*target_count = target_killed[0];
+				Mission3Var::HACK_param_val = target_killed[0];
 			}
 			else if (inlet_active)
 			{
-				*target_count = target_killed[1];
+				Mission3Var::HACK_param_val = target_killed[1];
 			}
 			else if (base_active)
 			{
-				*target_count = target_killed[2];
+				Mission3Var::HACK_param_val = target_killed[2];
 			}
 		}
 		if (type == 6000 && param == 6000)
@@ -5730,10 +5724,12 @@ DECLARE_SCRIPT(M03_Beach_Radio, "")
 		}
 		else
 		{
-			char* conv[3];
-			conv[0] = "M03CON044";
-			conv[1] = "M03CON045";
-			conv[2] = "M03CON046";
+			static constexpr const char* conv[3] =
+			{
+				"M03CON044",
+				"M03CON045",
+				"M03CON046"
+			};
 			
 
 			conv_id = Commands->Create_Conversation(conv[conv_count++], 0, 0, true);
@@ -5851,10 +5847,15 @@ DECLARE_SCRIPT(M03_Area_Troop_Counter, "")
 	{
 		if (type == 1000 && param == 1000)
 		{
-			int area = -1;
-			int target_count = -1;
-			Commands->Send_Custom_Event(obj, obj, 5000, (int)&area, 0.0f);
-			Commands->Send_Custom_Event(obj, obj, 6300, (int)&target_count, 0.0f);
+			// CFE NOTE: These were previously passing a pointer to local vars in the int param. Using a static instead.
+			Mission3Var::HACK_param_val = -1;
+			Commands->Send_Custom_Event(obj, obj, 5000, 0, 0.0f);
+			const int area = Mission3Var::HACK_param_val;
+
+			Mission3Var::HACK_param_val = -1;
+			Commands->Send_Custom_Event(obj, obj, 6300, 0, 0.0f);
+			const int target_count = Mission3Var::HACK_param_val;
+
 			if (area >= 0 && area <= 2)
 			{
 				area_count[area]--;
