@@ -1227,8 +1227,7 @@ MPJoinMenuClass::On_Init_Dialog (void)
 //	On_Command
 //
 ////////////////////////////////////////////////////////////////
-void
-MPJoinMenuClass::On_Command (int ctrl_id, int message_id, DWORD param)
+void MPJoinMenuClass::On_Command (int ctrl_id, int message_id, LPARAM param)
 {
 	if (ctrl_id == IDC_MENU_MP_JOING_BUTTON) {
 		ListCtrlClass *list_ctrl = (ListCtrlClass *)Get_Dlg_Item (IDC_GAME_LIST);
@@ -1349,7 +1348,7 @@ MPJoinMenuClass::Update_Game_List (void)
 		if (item_index >= 0) {
 			list_ctrl->Set_Entry_Text (item_index, 1, wide_owner_name);
 			list_ctrl->Set_Entry_Text (item_index, 2, wide_players_string);
-			list_ctrl->Set_Entry_Data (item_index, 0, (uint32)p_channel);
+			list_ctrl->Set_Entry_Data (item_index, 0, (LPARAM)p_channel);
 		}
 
       //

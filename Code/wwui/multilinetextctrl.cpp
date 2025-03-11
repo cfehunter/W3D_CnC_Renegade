@@ -141,10 +141,10 @@ MultiLineTextCtrlClass::Create_Text_Renderer (void)
 	//	Handy macro
 	//
 	#define COPY_LINE(dest,	src_start, src_end)	\
-			if (src_end == NULL) {						\
+			if (src_end == nullptr) {						\
 				dest = src_start;							\
 			} else {											\
-				uint32 bytes	= ((uint32)src_end - (uint32)src_start);	\
+				uint32 bytes	= ((uintptr)src_end - (uintptr)src_start);	\
 				uint32 len		= bytes / sizeof (WCHAR);						\
 				::memcpy (dest.Get_Buffer (len + 1), src_start, bytes);	\
 				dest.Peek_Buffer ()[len] = 0;										\

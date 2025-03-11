@@ -75,7 +75,7 @@ class DialogTransitionClass;
 ////////////////////////////////////////////////////////////////
 //	Typedefs
 ////////////////////////////////////////////////////////////////
-typedef bool (CALLBACK *DEFAULT_DLG_CMD_HANDLER) (DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD param);
+typedef bool (CALLBACK *DEFAULT_DLG_CMD_HANDLER) (DialogBaseClass *dialog, int ctrl_id, int mesage_id, LPARAM param);
 
 
 class DialogEvent :
@@ -232,7 +232,7 @@ public:
 	//
 	//	Notifications
 	//
-	virtual void			On_Command (int ctrl_id, int mesage_id, DWORD param);
+	virtual void			On_Command (int ctrl_id, int mesage_id, LPARAM param);
 
 	//
 	//	Default processing support

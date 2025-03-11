@@ -127,7 +127,7 @@ DialogFactoryBaseClass *FactoryArray[FACTORY_COUNT] =
 ////////////////////////////////////////////////////////////////
 //	Local Prototypes
 ////////////////////////////////////////////////////////////////
-bool CALLBACK Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD param);
+bool CALLBACK Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, LPARAM param);
 void	Stop_Main_Loop (int);
 
 ////////////////////////////////////////////////////////////////
@@ -351,8 +351,7 @@ RenegadeDialogMgrClass::Shutdown (void)
 //	Default_On_Command
 //
 ////////////////////////////////////////////////////////////////
-bool CALLBACK
-Default_On_Command (DialogBaseClass *dialog, int ctrl_id, int mesage_id, DWORD param)
+bool CALLBACK Default_On_Command(DialogBaseClass *dialog, int ctrl_id, int mesage_id, LPARAM param)
 {
 	bool handled = true;
 

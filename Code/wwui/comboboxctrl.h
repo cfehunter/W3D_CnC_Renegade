@@ -86,14 +86,14 @@ public:
 	//
 	//	Content control
 	//
-	int				Add_String (const WCHAR* string)		{ return DropDownCtrl.Add_String (string); }
-	void				Delete_String (int index);
-	int				Find_String (const WCHAR* string)		{ return DropDownCtrl.Find_String (string); }
+	int				Add_String (const WCHAR* string)				{ return DropDownCtrl.Add_String (string); }
+	void			Delete_String (int index);
+	int				Find_String (const WCHAR* string)				{ return DropDownCtrl.Find_String (string); }
 	int				Select_String (const WCHAR* string);
-	void				Set_Item_Data (int index, uint32 data)				{ DropDownCtrl.Set_Item_Data (index, data); Set_Dirty();}
-	uint32			Get_Item_Data (int index)								{ return DropDownCtrl.Get_Item_Data (index); }
-	void				Reset_Content (void)										{ DropDownCtrl.Reset_Content (); }
-	bool				Get_String (int index, WideStringClass &string)	{ return DropDownCtrl.Get_String (index, string); }
+	void			Set_Item_Data (int index, LPARAM data)			{ DropDownCtrl.Set_Item_Data (index, data); Set_Dirty();}
+	LPARAM			Get_Item_Data (int index)						{ return DropDownCtrl.Get_Item_Data (index); }
+	void			Reset_Content (void)							{ DropDownCtrl.Reset_Content (); }
+	bool			Get_String (int index, WideStringClass &string)	{ return DropDownCtrl.Get_String (index, string); }
 	
 	int Get_Item_Count(void) {return DropDownCtrl.Get_Count();}
 

@@ -104,15 +104,15 @@ public:
 	// Bulk registry operations. BE VERY VERY CAREFUL USING THESE
 	//
 	static void Delete_Registry_Tree(char *path);
-	static void Load_Registry(const char *filename, char *old_path, char *new_path);
-	static void Save_Registry(const char *filename, char *path);
+	static void Load_Registry(const char *filename, const char *old_path, char *new_path);
+	static void Save_Registry(const char *filename, const char *path);
 
 
 private:
 
 	static void Delete_Registry_Values(HKEY key);
-	static void Save_Registry_Tree(char *path, INIClass *ini);
-	static void Save_Registry_Values(HKEY key, char *path, INIClass *ini);
+	static void Save_Registry_Tree(const char *path, INIClass *ini);
+	static void Save_Registry_Values(HKEY key, const char *path, INIClass *ini);
 
 
 	uintptr_t Key;

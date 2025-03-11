@@ -396,7 +396,7 @@ int cNetwork::Get_Data_Files_CRC(void)
 #define	UNINITIALLIZED_CRC	0x4592abf1
 	static int crc = UNINITIALLIZED_CRC;
 	if ( crc == UNINITIALLIZED_CRC ) {
-		char * filelist[] = {
+		static constexpr const char * filelist[] = {
 		"jgo`fqv+aag",					//"objects.ddb",           
 		"dwhjw+lkl",					//"armor.ini",             
 		"gjk`v+lkl",					//"bones.ini",             
@@ -1386,7 +1386,7 @@ void cNetwork::Shell_Command(LPCSTR command)
 	WWASSERT(command != NULL);
 
 	HINSTANCE hinst = ShellExecute(NULL, NULL, command, NULL, "", SW_SHOW);
-	if ((int) hinst <= 32) {
+	if ((uintptr) hinst <= 32) {
       WWDEBUG_SAY(("Error: ShellExecute failed.\n"));
 	}
 }

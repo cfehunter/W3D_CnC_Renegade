@@ -490,7 +490,7 @@ public:
 		MenuDialogClass (IDD_MULTIPLAY_JOIN_GAME)	{}
 
 	void	On_Init_Dialog (void);
-	void	On_Command (int ctrl_id, int mesage_id, DWORD param);
+	void	On_Command (int ctrl_id, int mesage_id, LPARAM param) override;
 	void	Update_Game_List (void);
 	void	On_Frame_Update (void);
 };

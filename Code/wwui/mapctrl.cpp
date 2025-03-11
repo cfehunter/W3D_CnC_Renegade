@@ -880,8 +880,7 @@ MapCtrlClass::Add_Marker
 //	Get_Marker_Data
 //
 ////////////////////////////////////////////////////////////////
-uint32
-MapCtrlClass::Get_Marker_Data (int index)
+LPARAM MapCtrlClass::Get_Marker_Data (int index)
 {
 	return MarkerList[index].Get_User_Data ();
 }
@@ -893,7 +892,7 @@ MapCtrlClass::Get_Marker_Data (int index)
 //
 ////////////////////////////////////////////////////////////////
 void
-MapCtrlClass::Set_Marker_Data (int index, uint32 user_data)
+MapCtrlClass::Set_Marker_Data (int index, LPARAM user_data)
 {
 	MarkerList[index].Set_User_Data (user_data);
 	return ;

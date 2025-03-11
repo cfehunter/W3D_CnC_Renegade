@@ -34,12 +34,7 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#define CustomStringify(x) #x
-#define ExpandAndStringify(x) CustomStringify(x)
-
-
 #include "audiblesound.h"
-#pragma message("_CRTIMP expands to: " ExpandAndStringify(_CRTIMP))
 #include "wwaudio.h"
 #include "ww3d.h"
 #include "wwdebug.h"
@@ -57,7 +52,6 @@
 #include "sound2dhandle.h"
 #include "systimer.h"
 
-#include <iostream>
 //////////////////////////////////////////////////////////////////////////////////
 //	Static factories
 //////////////////////////////////////////////////////////////////////////////////
@@ -1979,7 +1973,7 @@ AudibleSoundClass::Save (ChunkSaveClass &csave)
 		}
 
 		AudibleSoundClass *this_ptr = this;
-		WRITE_MICRO_CHUNK (csave, VARID_THIS_PTR, this_ptr);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_THIS_PTR, this_ptr);
 
 	csave.End_Chunk ();
 

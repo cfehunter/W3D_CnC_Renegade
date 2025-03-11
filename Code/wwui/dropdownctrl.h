@@ -83,12 +83,12 @@ public:
 	//	Content control
 	//
 	int					Add_String (const WCHAR* string);
-	void					Delete_String (int index);
+	void				Delete_String (int index);
 	int					Find_String (const WCHAR* string);
 	int					Find_Closest_String(const WCHAR* string);
-	void					Set_Item_Data (int index, uint32 data);
-	uint32				Get_Item_Data (int index);
-	void					Reset_Content (void);
+	void				Set_Item_Data (int index, LPARAM data);
+	LPARAM				Get_Item_Data (int index);
+	void				Reset_Content (void);
 	
 	//
 	//	Information accessors

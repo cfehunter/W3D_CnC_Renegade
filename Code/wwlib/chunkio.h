@@ -356,12 +356,12 @@ if (var != nullptr){\
 /*
 ** Like READ_MICRO_CHUNK but reads items straight into the data safe.
 */
-#define READ_SAFE_MICRO_CHUNK(cload,id,var,type)								\
-	case (id):	{                                                    \
-		void *temp_read_buffer_on_the_stack = _alloca(sizeof(type)); \
-		cload.Read(temp_read_buffer_on_the_stack, sizeof(type));     \
-		var = *((type*)temp_read_buffer_on_the_stack);               \
-		break;                                                       \
+#define READ_SAFE_MICRO_CHUNK(cload,id,var,type)                    \
+	case (id):	{                                                   \
+		void *temp_read_buffer_on_the_stack = alloca(sizeof(type)); \
+		cload.Read(temp_read_buffer_on_the_stack, sizeof(type));    \
+		var = *((type*)temp_read_buffer_on_the_stack);              \
+		break;                                                      \
 	}
 
 #define READ_MICRO_CHUNK_STRING(cload,id,var,size)		\

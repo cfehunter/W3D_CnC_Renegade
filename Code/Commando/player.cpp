@@ -163,7 +163,7 @@ bool cPlayer::Save(ChunkSaveClass & csave)
 	WRITE_MICRO_CHUNK(csave, MICROCHUNK_DEATHS, Deaths());
 	WRITE_MICRO_CHUNK(csave, MICROCHUNK_TEAMNUMBER, PlayerType());
 	void * old_ptr = this;
-	WRITE_MICRO_CHUNK(csave, MICROCHUNK_REMAP_POINTER, old_ptr);
+	WRITE_PTR_MICRO_CHUNK(csave, MICROCHUNK_REMAP_POINTER, old_ptr);
 
 	csave.End_Chunk();
 
@@ -173,7 +173,7 @@ bool cPlayer::Save(ChunkSaveClass & csave)
 //-----------------------------------------------------------------------------
 bool cPlayer::Load(ChunkLoadClass &cload)
 {
-	void * old_ptr = NULL;
+	uint32 old_ptr = 0;
 
 	while (cload.Open_Chunk()) {
 		switch(cload.Cur_Chunk_ID()) {
@@ -210,9 +210,8 @@ bool cPlayer::Load(ChunkLoadClass &cload)
 		cload.Close_Chunk();
 	}
 
-	if ( old_ptr != NULL ) {
+	if ( old_ptr )
 		SaveLoadSystemClass::Register_Pointer(old_ptr, this);
-	}
 
 	return true;
 }

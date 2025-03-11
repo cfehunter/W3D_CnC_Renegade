@@ -410,7 +410,7 @@ bool WebBrowser::FinalizeCreate(HWND window)
 *
 ******************************************************************************/
 
-bool WebBrowser::ShowWebPage(char* page)
+bool WebBrowser::ShowWebPage(const char* page)
 	{
 	// Retrieve URL from page identifier
 	char url[512];
@@ -1078,15 +1078,15 @@ bool WebBrowser::LaunchExternal(const char* url)
 	// Find the executable that can launch this file
 	char exeName[MAX_PATH];
 	HINSTANCE hInst = FindExecutable(filename, NULL, exeName);
-	WWASSERT(((int)hInst > 32) && "Unable to find executable that will display HTML files.");
+	WWASSERT(((uintptr)hInst > 32) && "Unable to find executable that will display HTML files.");
 
 	// Delete temporary file
 	DeleteFile(filename);
 
-	if ((int)hInst <= 32)
-		{
+	if ((uintptr)hInst <= 32)
+	{
 		return false;
-		}
+	}
 
 	// Launch browser with specified URL
 	char commandLine[MAX_PATH];

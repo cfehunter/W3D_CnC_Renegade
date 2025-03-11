@@ -349,7 +349,7 @@ void Commando_Assert_Handler(const char * message)
 			m$"               "m           "
                        																												*/
 
-		_asm int 0x03;
+		__debugbreak();
 	}
 
 	if (cDevOptions::ExitThreadOnAssert.Is_True()) {
@@ -1109,7 +1109,7 @@ bool Game_Init(void)
  * HISTORY:                                                                                    *
  *   11/9/2001 3:39PM ST : Created                                                             *
  *=============================================================================================*/
-char *Build_Registry_Location_String(char *base, char *modifier, char *sub)
+const char* Build_Registry_Location_String(const char *base, const char *modifier, const char *sub)
 {
 	static char _whole_registry_string[1024];
 

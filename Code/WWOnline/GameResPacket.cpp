@@ -247,7 +247,7 @@ unsigned char* GameResPacket::Create_Comms_Packet(unsigned long& size, char* sig
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-GameResField *GameResPacket::Find_Field(char *id)
+GameResField *GameResPacket::Find_Field(const char *id)
 	{
 	for (GameResField *current = mHead; current; current = current->mNext)
 		{
@@ -273,7 +273,7 @@ GameResField *GameResPacket::Find_Field(char *id)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, char &data)
+bool GameResPacket::Get_Field(const char *id, char &data)
 	{
 	GameResField *field = Find_Field(id);
 
@@ -300,7 +300,7 @@ bool GameResPacket::Get_Field(char *id, char &data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, unsigned char &data)
+bool GameResPacket::Get_Field(const char *id, unsigned char &data)
 {
 	GameResField *field = Find_Field(id);
 
@@ -327,7 +327,7 @@ bool GameResPacket::Get_Field(char *id, unsigned char &data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, short &data)
+bool GameResPacket::Get_Field(const char *id, short &data)
 	{
 	GameResField *field = Find_Field(id);
 
@@ -354,7 +354,7 @@ bool GameResPacket::Get_Field(char *id, short &data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, unsigned short &data)
+bool GameResPacket::Get_Field(const char *id, unsigned short &data)
 	{
 	GameResField *field = Find_Field(id);
 
@@ -381,7 +381,7 @@ bool GameResPacket::Get_Field(char *id, unsigned short &data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, long &data)
+bool GameResPacket::Get_Field(const char *id, long &data)
 	{
 	GameResField *field = Find_Field(id);
 
@@ -409,7 +409,7 @@ bool GameResPacket::Get_Field(char *id, long &data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, char *data)
+bool GameResPacket::Get_Field(const char *id, char *data)
 	{
 	GameResField *field = Find_Field(id);
 
@@ -437,7 +437,7 @@ bool GameResPacket::Get_Field(char *id, char *data)
  * HISTORY:                                                               *
  *   04/23/1996 PWG : Created.                                            *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, unsigned long &data)
+bool GameResPacket::Get_Field(const char *id, unsigned long &data)
 	{
 	GameResField *field = Find_Field(id);
 
@@ -465,7 +465,7 @@ bool GameResPacket::Get_Field(char *id, unsigned long &data)
  * HISTORY:                                                               *
  *   6/4/96 4:46PM ST : Created                                           *
  *========================================================================*/
-bool GameResPacket::Get_Field(char *id, void *data, int &length)
+bool GameResPacket::Get_Field(const char *id, void *data, int &length)
 	{
 	GameResField *field = Find_Field(id);
 

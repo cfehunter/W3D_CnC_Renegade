@@ -35,6 +35,9 @@ target_include_directories(wwcommon INTERFACE
     .
 )
 
+# Find/Add build dependencies and stubs.
+# Only 32bit Windows can make use of these APIs as the libraries shipped with the game.
+if((WIN32 OR "${CMAKE_SYSTEM}" MATCHES "Windows") AND ${CMAKE_SIZEOF_VOID_P} EQUAL 4)
 target_link_libraries(wwcommon INTERFACE
     milesstub
     binkstub
@@ -42,6 +45,12 @@ target_link_libraries(wwcommon INTERFACE
     d3d8lib
     headeronlystubs
 )
+else()
+target_link_libraries(wwcommon INTERFACE
+    gamespy
+    headeronlystubs
+)
+endif()
 
 # Module static libraries
 add_subdirectory(BinkMovie)

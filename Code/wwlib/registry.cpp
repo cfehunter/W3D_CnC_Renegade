@@ -363,7 +363,7 @@ void	RegistryClass::Set_String( const WCHAR * name, const WCHAR *value )
  * HISTORY:                                                                                    *
  *   11/21/2001 3:32PM ST : Created                                                            *
  *=============================================================================================*/
-void RegistryClass::Save_Registry_Values(HKEY key, char *path, INIClass *ini)
+void RegistryClass::Save_Registry_Values(HKEY key, const char *path, INIClass *ini)
 {
 	int index = 0;
 	long result = ERROR_SUCCESS;
@@ -439,7 +439,7 @@ void RegistryClass::Save_Registry_Values(HKEY key, char *path, INIClass *ini)
  * HISTORY:                                                                                    *
  *   11/21/2001 3:33PM ST : Created                                                            *
  *=============================================================================================*/
-void RegistryClass::Save_Registry_Tree(char *path, INIClass *ini)
+void RegistryClass::Save_Registry_Tree(const char *path, INIClass *ini)
 {
 	HKEY base_key;
 	HKEY sub_key;
@@ -519,7 +519,7 @@ void RegistryClass::Save_Registry_Tree(char *path, INIClass *ini)
  * HISTORY:                                                                                    *
  *   11/21/2001 3:36PM ST : Created                                                            *
  *=============================================================================================*/
-void RegistryClass::Save_Registry(const char *filename, char *path)
+void RegistryClass::Save_Registry(const char *filename, const char *path)
 {
 	RawFileClass file(filename);
 	INIClass ini;
@@ -543,7 +543,7 @@ void RegistryClass::Save_Registry(const char *filename, char *path)
  * HISTORY:                                                                                    *
  *   11/21/2001 3:35PM ST : Created                                                            *
  *=============================================================================================*/
-void RegistryClass::Load_Registry(const char *filename, char *old_path, char *new_path)
+void RegistryClass::Load_Registry(const char *filename, const char *old_path, char *new_path)
 {
 	if (!IsLocked) {
 		RawFileClass file(filename);

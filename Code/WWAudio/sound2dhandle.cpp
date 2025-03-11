@@ -296,8 +296,7 @@ Sound2DHandleClass::Get_Sample_MS_Position (S32 *len, S32 *pos)
 //	Set_Sample_User_Data
 //
 //////////////////////////////////////////////////////////////////////
-void
-Sound2DHandleClass::Set_Sample_User_Data (S32 i, U32 val)
+void Sound2DHandleClass::Set_Sample_User_Data (S32 i, uintptr val)
 {
 	if (SampleHandle != (HSAMPLE)INVALID_MILES_HANDLE) {
 		::AIL_set_sample_user_data (SampleHandle, i, val);
@@ -312,8 +311,7 @@ Sound2DHandleClass::Set_Sample_User_Data (S32 i, U32 val)
 //	Get_Sample_User_Data
 //
 //////////////////////////////////////////////////////////////////////
-U32
-Sound2DHandleClass::Get_Sample_User_Data (S32 i)
+uintptr Sound2DHandleClass::Get_Sample_User_Data (S32 i)
 {
 	U32 retval = 0;
 

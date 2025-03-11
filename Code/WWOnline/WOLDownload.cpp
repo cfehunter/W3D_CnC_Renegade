@@ -1020,11 +1020,11 @@ void DownloadWait::EndWait(WaitResult endResult, const wchar_t* endText)
 *
 ******************************************************************************/
 
-void DownloadWait::SetCallback(DownloadWaitCallback callback, unsigned long userdata)
-	{
+void DownloadWait::SetCallback(DownloadWaitCallback callback, LPARAM userdata)
+{
 	mCallback = callback;
 	mUserdata = userdata;
-	}
+}
 
 
 /******************************************************************************

@@ -48,6 +48,8 @@
 #include "wwprofile.h"
 #include "connect.h"
 
+#include <algorithm>
+
 /*
 ** Single instance of PacketManagerClass.
 */
@@ -894,21 +896,16 @@ WWPROFILE("PMgr Flush");
 
 #ifdef WRAPPER_CRC
 
-			unsigned long crc = CRC::Memory((unsigned char*)SendBuffers[i].PacketBuffer, SendBuffers[i].PacketSendLength);
+			uint32 crc = CRC::Memory((unsigned char*)SendBuffers[i].PacketBuffer, SendBuffers[i].PacketSendLength);
 #if (1)
 			/*
 			** Reverse byte order to prevent the demo from having the same CRC as the game.
 			*/
-			_asm {
-				push	eax;
-				mov	eax,crc;
-				bswap	eax;
-				mov	crc,eax;
-				pop	eax;
-			};
+			std::reverse((uint8*)&crc, (uint8*)&crc + sizeof(crc));
+
 #endif //(0)
 			char *crc_and_buffer = (char*)_alloca(SendBuffers[i].PacketSendLength + sizeof(crc));
-			*((unsigned long*) crc_and_buffer) = crc;
+			*((uint32*) crc_and_buffer) = crc;
 			memcpy(crc_and_buffer + sizeof(crc), (const char*)SendBuffers[i].PacketBuffer, SendBuffers[i].PacketSendLength);
 
 			Register_Packet_Out(&SendBuffers[i].IPAddress[0], SendBuffers[i].Port, SendBuffers[i].PacketSendLength + UDP_HEADER_SIZE + sizeof(crc), 0);
@@ -1163,20 +1160,14 @@ WWPROFILE("Pmgr Get");
 #endif //WRAPPER_CRC
 
 #ifdef WRAPPER_CRC
-				unsigned long crc = CRC::Memory((unsigned char*)packet_buffer + 4, bytes - sizeof(crc));
+				uint32 crc = CRC::Memory((unsigned char*)packet_buffer + 4, bytes - sizeof(crc));
 #if (1)
 				/*
 				** Reverse byte order to prevent the demo from having the same CRC as the game.
 				*/
-				_asm {
-					push	eax;
-					mov	eax,crc;
-					bswap	eax;
-					mov	crc,eax;
-					pop	eax;
-				};
+				std::reverse((uint8*)&crc, (uint8*)&crc + sizeof(crc));
 #endif //(0)
-				if (crc != *((unsigned long*)packet_buffer)) {
+				if (crc != *((uint32*)packet_buffer)) {
 					WWDEBUG_SAY(("PMC::Get_Packet: Socket %d, received packet %d bytes long from %s\n", socket, bytes, Addr_As_String(&addr)));
 					WWDEBUG_SAY(("PMC::Get_Packet: *** PACKET WRAPPER CRC ERROR ***"));
 					NumReceivePackets = 0;

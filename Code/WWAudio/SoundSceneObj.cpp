@@ -265,10 +265,10 @@ SoundSceneObjClass::Save (ChunkSaveClass &csave)
 	csave.End_Chunk ();
 
 	csave.Begin_Chunk (CHUNKID_VARIABLES);		
-		WRITE_MICRO_CHUNK (csave, VARID_ATTACHED_OBJ, m_AttachedObject);
-		WRITE_MICRO_CHUNK (csave, VARID_ATTACHED_BONE, m_AttachedBone);		
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_ATTACHED_OBJ, m_AttachedObject);
+		WRITE_MICRO_CHUNK (csave, VARID_ATTACHED_BONE, m_AttachedBone);
 		WRITE_MICRO_CHUNK (csave, VARID_USER_DATA, m_UserData);
-		WRITE_MICRO_CHUNK (csave, VARID_USER_OBJ, m_UserObj);
+		WRITE_PTR_MICRO_CHUNK (csave, VARID_USER_OBJ, m_UserObj);
 		WRITE_MICRO_CHUNK (csave, VARID_ID, m_ID);		
 	csave.End_Chunk ();
 	return true;
@@ -285,6 +285,7 @@ SoundSceneObjClass::Load (ChunkLoadClass &cload)
 {
 	uint32 id = SOUND_OBJ_DEFAULT_ID;
 	uint32 old_attached_object = 0u;
+	uint32 old_user_object = 0u;
 
 	while (cload.Open_Chunk ()) {		
 		switch (cload.Cur_Chunk_ID ()) {
@@ -304,7 +305,7 @@ SoundSceneObjClass::Load (ChunkLoadClass &cload)
 						READ_MICRO_CHUNK (cload, VARID_ATTACHED_OBJ, old_attached_object);
 						READ_MICRO_CHUNK (cload, VARID_ATTACHED_BONE, m_AttachedBone);
 						READ_MICRO_CHUNK (cload, VARID_USER_DATA, m_UserData);
-						READ_MICRO_CHUNK (cload, VARID_USER_OBJ, m_UserObj);
+						READ_MICRO_CHUNK (cload, VARID_USER_OBJ, old_user_object);
 						READ_MICRO_CHUNK (cload, VARID_ID, id);
 					}
 
@@ -334,10 +335,13 @@ SoundSceneObjClass::Load (ChunkLoadClass &cload)
 	//	We need to 'swizzle' the attached object pointer.  We saved the pointer's
 	// value, and need to map it (hopefully) to the new value.
 	//
-	if (m_AttachedObject != NULL) {
+	if (old_attached_object)
 		REQUEST_REF_COUNTED_POINTER_REMAP(old_attached_object, (RefCountClass **)&m_AttachedObject);
-	}
 	
+	//#CFE_TODO: They weren't fixing up the user object. Bug?
+	if (old_user_object)
+		REQUEST_REF_COUNTED_POINTER_REMAP(old_user_object, (RefCountClass**)&m_UserObj);
+
 	return true;
 }
 
