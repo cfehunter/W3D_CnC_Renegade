@@ -1355,7 +1355,7 @@ size_t Stack_Walk(const uintptr_t ip_in, const uintptr_t sp_in, const uintptr_t 
 	// Skip frames
 	for (size_t i = 0; i < skip_frames; ++i)
 	{
-		if (!_StackWalk(machine_type, current_proc, current_thread, &stack_frame, NULL, NULL, SymFunctionTableAccess, SymGetModuleBase, NULL))
+		if (!_StackWalk(machine_type, current_proc, current_thread, &stack_frame, NULL, NULL, _SymFunctionTableAccess, _SymGetModuleBase, NULL))
 			break;
 	}
 
@@ -1363,7 +1363,7 @@ size_t Stack_Walk(const uintptr_t ip_in, const uintptr_t sp_in, const uintptr_t 
 	size_t pointer_index = 0;
 	while (pointer_index < max_addresses)
 	{
-		if (!_StackWalk(machine_type, current_proc, current_thread, &stack_frame, NULL, NULL, SymFunctionTableAccess, SymGetModuleBase, NULL))
+		if (!_StackWalk(machine_type, current_proc, current_thread, &stack_frame, NULL, NULL, _SymFunctionTableAccess, _SymGetModuleBase, NULL))
 			break;
 		
 		uintptr_t return_address = stack_frame.AddrReturn.Offset;
