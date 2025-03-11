@@ -57,8 +57,6 @@
 #include "iostruct.h"
 #endif
 
-#include <type_traits>
-
 /************************************************************************************
 
 	ChunkIO
@@ -157,7 +155,7 @@ public:
 
 	// Do not allow writing T**. Pointers must be converted before writing
 	template <typename T>
-	std::enable_if_t<std::is_pointer_v<std::remove_pointer_t<T>>, uint32_t> Write(const T, uint32) = delete;
+	uint32 Write(T** buf, uint32 nbytes) = delete;
 
 private:
 
@@ -214,7 +212,7 @@ public:
 	// Do not allow reading T**
 	// Pointers must be converted from uint32 ids
 	template <typename T>
-	std::enable_if_t<std::is_pointer_v<std::remove_pointer_t<T>>, uint32_t> Read(T, uint32) = delete;
+	uint32 Read(T** buf, uint32 nbytes) = delete;
 
 	// Seek over a block of bytes in the stream (same as Read but don't copy the data to a buffer)
 	uint32				Seek(uint32 nbytes);
