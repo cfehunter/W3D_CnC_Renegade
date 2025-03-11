@@ -457,10 +457,10 @@ WWPROFILE( "Input Active" );
 				int(WW3D::Get_Last_Frame_Poly_Count()*FPS/1000));
 			message += working_string;
 
-			unsigned ffheap=FastAllocatorGeneral::Get_Allocator()->Get_Total_Heap_Size();
-			unsigned ffuse=FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocated_Size();
-			unsigned actualuse=FastAllocatorGeneral::Get_Allocator()->Get_Total_Actual_Memory_Usage();
-			unsigned count=FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocation_Count();
+			unsigned ffheap=FastAllocatorGeneral::Get_Allocator().Get_Total_Heap_Size();
+			unsigned ffuse=FastAllocatorGeneral::Get_Allocator().Get_Total_Allocated_Size();
+			unsigned actualuse=FastAllocatorGeneral::Get_Allocator().Get_Total_Actual_Memory_Usage();
+			unsigned count=FastAllocatorGeneral::Get_Allocator().Get_Total_Allocation_Count();
 			working_string.Format(
 				"\nMalloc count: %d\n"
 				"Free count: %d\n"

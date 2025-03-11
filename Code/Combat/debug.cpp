@@ -476,10 +476,10 @@ void * ::operator new (size_t size)
 	#ifdef WWDEBUG
 		memory=WWMemoryLogClass::Allocate_Memory(size);
 	#else
-		memory=FastAllocatorGeneral::Get_Allocator()->Alloc(size);
+		memory=FastAllocatorGeneral::Get_Allocator().Alloc(size);
 	#endif
 #else
-	memory=FastAllocatorGeneral::Get_Allocator()->Alloc(size);
+	memory=FastAllocatorGeneral::Get_Allocator().Alloc(size);
 #endif
 	return memory;
 }
@@ -490,10 +490,10 @@ void ::operator delete (void *ptr)
 	#ifdef WWDEBUG
 		WWMemoryLogClass::Release_Memory(ptr);
 	#else
-		FastAllocatorGeneral::Get_Allocator()->Free(ptr);
+		FastAllocatorGeneral::Get_Allocator().Free(ptr);
 	#endif
 #else
-	FastAllocatorGeneral::Get_Allocator()->Free(ptr);
+	FastAllocatorGeneral::Get_Allocator().Free(ptr);
 #endif
 }
 

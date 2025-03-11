@@ -834,10 +834,10 @@ void CombatGameModeClass::Load_Level( void )
 	}
 
 	if (!ConsoleBox.Is_Exclusive()) {
-		unsigned ffheap=FastAllocatorGeneral::Get_Allocator()->Get_Total_Heap_Size();
-		unsigned ffuse=FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocated_Size();
-		unsigned actualuse=FastAllocatorGeneral::Get_Allocator()->Get_Total_Actual_Memory_Usage();
-		unsigned count=FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocation_Count();
+		unsigned ffheap=FastAllocatorGeneral::Get_Allocator().Get_Total_Heap_Size();
+		unsigned ffuse=FastAllocatorGeneral::Get_Allocator().Get_Total_Allocated_Size();
+		unsigned actualuse=FastAllocatorGeneral::Get_Allocator().Get_Total_Actual_Memory_Usage();
+		unsigned count=FastAllocatorGeneral::Get_Allocator().Get_Total_Allocation_Count();
 		StringClass working_string(0,true);
 		working_string.Format(
 			"\nMalloc count: %d\n"

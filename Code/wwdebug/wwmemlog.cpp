@@ -58,8 +58,8 @@
 #endif //STEVES_NEW_CATCHER*/
 
 #ifdef USE_FAST_ALLOCATOR
-	#define ALLOC_MEMORY(n) FastAllocatorGeneral::Get_Allocator()->Alloc(n)
-	#define FREE_MEMORY(p) FastAllocatorGeneral::Get_Allocator()->Free(p)
+	#define ALLOC_MEMORY(n) FastAllocatorGeneral::Get_Allocator().Alloc(n)
+	#define FREE_MEMORY(p) FastAllocatorGeneral::Get_Allocator().Free(p)
 #else
 	#define ALLOC_MEMORY(n) ::malloc(n)
 	#define FREE_MEMORY(p) ::free(p)
@@ -82,7 +82,7 @@ static unsigned FreeCount;
 ** Name for each memory category.  I'm padding the array with some "undefined" strings in case
 ** someone forgets to set the name when adding a new category.
 */
-static char * _MemoryCategoryNames[] =
+static constexpr const char * _MemoryCategoryNames[] =
 {
 	"UNKNOWN",
 	"Geometry",

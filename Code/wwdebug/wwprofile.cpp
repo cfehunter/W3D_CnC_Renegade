@@ -85,22 +85,11 @@ unsigned WWProfile_Get_System_Time()
 inline void WWProfile_Get_Ticks(_int64 * ticks)
 {
 #ifdef _UNIX
-       *ticks = TIMEGETTIME();
+	*ticks = TIMEGETTIME();
+#elif defined(_MSC_VER)
+	*ticks = __rdtsc();
 #else
-	__asm
-	{
-		push edx;
-		push ecx;
-		push eax;
-		mov ecx,ticks;
-		_emit 0Fh
-		_emit 31h
-		mov [ecx],eax;
-		mov [ecx+4],edx;
-		pop eax;
-		pop ecx;
-		pop edx;
-	}
+#error Implement get ticks
 #endif
 }
 
@@ -750,8 +739,8 @@ WWMemoryAndTimeLog::WWMemoryAndTimeLog(const char* name)
 	:
 	Name(name),
 	TimeStart(WWProfile_Get_System_Time()),
-	AllocCountStart(FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocation_Count()),
-	AllocSizeStart(FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocated_Size())
+	AllocCountStart(FastAllocatorGeneral::Get_Allocator().Get_Total_Allocation_Count()),
+	AllocSizeStart(FastAllocatorGeneral::Get_Allocator().Get_Total_Allocated_Size())
 {
 	IntermediateTimeStart=TimeStart;
 	IntermediateAllocCountStart=AllocCountStart;
@@ -770,8 +759,8 @@ WWMemoryAndTimeLog::~WWMemoryAndTimeLog()
 	WWRELEASE_SAY(("%s} ",tmp));
 
 	unsigned current_time=WWProfile_Get_System_Time();
-	int current_alloc_count=FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocation_Count();
-	int current_alloc_size=FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocated_Size();
+	int current_alloc_count=FastAllocatorGeneral::Get_Allocator().Get_Total_Allocation_Count();
+	int current_alloc_size=FastAllocatorGeneral::Get_Allocator().Get_Total_Allocated_Size();
 	WWRELEASE_SAY(("IN TOTAL %s took %d.%3.3d s, did %d memory allocations of %d bytes\n",
 		Name,
 		(current_time - TimeStart)/1000, (current_time - TimeStart)%1000,
@@ -785,8 +774,8 @@ WWMemoryAndTimeLog::~WWMemoryAndTimeLog()
 void WWMemoryAndTimeLog::Log_Intermediate(const char* text)
 {
 	unsigned current_time=WWProfile_Get_System_Time();
-	int current_alloc_count=FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocation_Count();
-	int current_alloc_size=FastAllocatorGeneral::Get_Allocator()->Get_Total_Allocated_Size();
+	int current_alloc_count=FastAllocatorGeneral::Get_Allocator().Get_Total_Allocation_Count();
+	int current_alloc_size=FastAllocatorGeneral::Get_Allocator().Get_Total_Allocated_Size();
 	StringClass tmp(0,true);
 	for (unsigned i=0;i<TabCount;++i) tmp+="\t";
 	WWRELEASE_SAY(("%s%s took %d.%3.3d s, did %d memory allocations of %d bytes\n",
