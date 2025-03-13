@@ -242,6 +242,17 @@ target_include_directories(ww3d2
     "${DXSDK_DIR_ENV}Include"
 )
 
+target_link_directories(ww3d2
+    PUBLIC
+    "${DXSDK_DIR_ENV}Lib/x64"
+)
+
+target_link_libraries(ww3d2
+    PUBLIC
+    d3d9.lib
+    d3dx9.lib
+)
+
 # This module needs building differently for the level editor
 if (RENEGADE_TOOLS)
     # Targets to build.

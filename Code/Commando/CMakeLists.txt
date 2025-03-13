@@ -429,10 +429,9 @@ target_link_libraries(commando INTERFACE
     winmm
     vfw32
     wsock32
-    d3d8lib
+    d3d9
+    d3dx9
     version
-    milesstub
-    binkstub
     gamespy
     bandtest
     wwdebug

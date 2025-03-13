@@ -38,10 +38,7 @@
 #include "RefPtr.h"
 #include <WWLib\WWString.h>
 
-namespace WOL
-{
 #include "wolapi.h"
-}
 
 #ifdef _MSC_VER
 #pragma warning (push,3)

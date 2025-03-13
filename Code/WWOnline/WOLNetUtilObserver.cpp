@@ -32,8 +32,8 @@
 *
 ******************************************************************************/
 
-#include <windows.h>
 #include <atlbase.h>
+#include <windows.h>
 #include "WOLNetUtilObserver.h"
 #include "WOLSession.h"
 #include "WOLLadder.h"

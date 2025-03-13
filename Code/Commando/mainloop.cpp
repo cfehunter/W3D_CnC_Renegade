@@ -34,6 +34,8 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include <atlbase.h>
+
 #include "mainloop.h"
 #include "init.h"
 #include "shutdown.h"

@@ -36,7 +36,7 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-#include <wchar.h>
+#include <tchar.h>
 #include <GameSpy/gcdkey/gcdkeys.h>
 #include <GameSpy/gcdkey/gcdkeyc.h>
 #include <GameSpy/nonport.h>

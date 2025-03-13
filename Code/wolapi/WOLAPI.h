@@ -28,6 +28,10 @@
 */
 //@@MIDL_FILE_HEADING(  )
 
+#pragma once
+
+#ifndef __WOLAPI_h__
+#define __WOLAPI_h__
 
 /* verify that the <rpcndr.h> version is high enough to compile this file*/
 #ifndef __REQUIRED_RPCNDR_H_VERSION__
@@ -46,12 +50,17 @@
 #include "ole2.h"
 #endif /*COM_NO_WINDOWS_H*/
 
-#ifndef __WOLAPI_h__
-#define __WOLAPI_h__
+/* header files for imported files */
+#include "oaidl.h"
+#include "ocidl.h"
+
 
 #ifdef __cplusplus
 extern "C"{
 #endif 
+
+namespace WOL
+{
 
 /* Forward Declarations */ 
 
@@ -191,11 +200,6 @@ typedef struct Chat2 Chat2;
 #endif /* __cplusplus */
 
 #endif 	/* __Chat2_FWD_DEFINED__ */
-
-
-/* header files for imported files */
-#include "oaidl.h"
-#include "ocidl.h"
 
 void __RPC_FAR * __RPC_USER MIDL_user_allocate(size_t);
 void __RPC_USER MIDL_user_free( void __RPC_FAR * ); 
@@ -5514,6 +5518,7 @@ Chat2;
 
 /* end of Additional Prototypes */
 
+} // WOL
 #ifdef __cplusplus
 }
 #endif

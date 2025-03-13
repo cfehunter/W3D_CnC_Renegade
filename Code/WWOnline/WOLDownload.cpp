@@ -33,7 +33,9 @@
 *
 ******************************************************************************/
 
-#include <WWLib\Always.h>
+#include <atlbase.h>
+
+#include <WWLib/Always.h>
 #include "WOLDownload.h"
 #include "WOLProduct.h"
 #include "WOLErrorUtil.h"

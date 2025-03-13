@@ -34,6 +34,8 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include <atlbase.h>
+
 #include "console.h"
 #include "consolefunction.h"
 #include "textdisplay.h"

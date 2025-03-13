@@ -41,6 +41,7 @@
  *   On_Focus_Restore -- This function is called when the application gets focus               *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include <atlbase.h>
 
 #include "winmain.h"
 #define _WIN32_WINDOWS 0x0401
@@ -263,7 +264,7 @@ static bool Graphics_Settings_Trouble_Shooting()
 	return true;
 }
 
-typedef IDirect3D8* (WINAPI *Direct3DCreate8Type) (UINT SDKVersion);
+typedef IDirect3D9* (WINAPI *Direct3DCreate8Type) (UINT SDKVersion);
 static Direct3DCreate8Type	Direct3DCreate8Ptr = NULL;
 static HINSTANCE D3D8Lib = NULL;
 
@@ -275,10 +276,10 @@ static bool Video_Card_Driver_Check()
 	int disabled=render_registry.Get_Int( "DriverVersionCheckDisabled" );
 	if (disabled>=87) return true;
 
-	IDirect3D8* d3d=NULL;
-	D3DCAPS8 tmp_caps;
-	const D3DCAPS8* d3dcaps=NULL;
-	D3DADAPTER_IDENTIFIER8 adapter_id;
+	IDirect3D9* d3d=NULL;
+	D3DCAPS9 tmp_caps;
+	const D3DCAPS9* d3dcaps=NULL;
+	D3DADAPTER_IDENTIFIER9 adapter_id;
 
 	// Init D3D
 	Init_D3D_To_WW3_Conversion();
@@ -313,9 +314,9 @@ static bool Video_Card_Driver_Check()
 
 	int adapter_count = d3d->GetAdapterCount();
 	for (int adapter_index=0; adapter_index<adapter_count; adapter_index++) {
-		D3DADAPTER_IDENTIFIER8 id;
-		::ZeroMemory(&id, sizeof(D3DADAPTER_IDENTIFIER8));
-		HRESULT res = d3d->GetAdapterIdentifier(adapter_index,D3DENUM_NO_WHQL_LEVEL,&id);
+		D3DADAPTER_IDENTIFIER9 id;
+		::ZeroMemory(&id, sizeof(D3DADAPTER_IDENTIFIER9));
+		HRESULT res = d3d->GetAdapterIdentifier(adapter_index, 0, &id);
 		// If device ok, check if it matches the currently set adapter name
 		if (res == D3D_OK) {
 			StringClass name(id.Description,true);
@@ -335,10 +336,10 @@ static bool Video_Card_Driver_Check()
 		return true;
 	}
 
-	::ZeroMemory(&adapter_id, sizeof(D3DADAPTER_IDENTIFIER8));
+	::ZeroMemory(&adapter_id, sizeof(D3DADAPTER_IDENTIFIER9));
 	if (FAILED( d3d->GetAdapterIdentifier(
 		current_adapter_index,
-		D3DENUM_NO_WHQL_LEVEL,
+		0,
 		&adapter_id))) {
 		d3d->Release();
 		FreeLibrary(D3D8Lib);

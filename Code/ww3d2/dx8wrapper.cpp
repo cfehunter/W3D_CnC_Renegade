@@ -2613,7 +2613,7 @@ DX8Wrapper::Set_Render_Target(IDirect3DSurface9 *render_target, bool use_default
 		//	We'll need the depth buffer later...
 		//
 		if (DefaultDepthBuffer == NULL) {
-//		IDirect3DSurface8 *depth_buffer = NULL;
+//		IDirect3DSurface9 *depth_buffer = NULL;
 			DX8CALL(GetDepthStencilSurface (&DefaultDepthBuffer));
 		}
 
@@ -2786,7 +2786,7 @@ const char* DX8Wrapper::Get_DX8_Render_State_Name(D3DRENDERSTATETYPE state)
 	case D3DRS_FOGEND                        : return "D3DRS_FOGEND";
 	case D3DRS_FOGDENSITY                    : return "D3DRS_FOGDENSITY";
 	//case D3DRS_EDGEANTIALIAS                 : return "D3DRS_EDGEANTIALIAS";
-	//case D3DRS_ZBIAS                         : return "D3DRS_ZBIAS";
+	//case D3DRS_DEPTHBIAS                         : return "D3DRS_DEPTHBIAS";
 	case D3DRS_RANGEFOGENABLE                : return "D3DRS_RANGEFOGENABLE";
 	case D3DRS_STENCILENABLE                 : return "D3DRS_STENCILENABLE";
 	case D3DRS_STENCILFAIL                   : return "D3DRS_STENCILFAIL";
@@ -2971,7 +2971,7 @@ void DX8Wrapper::Get_DX8_Render_State_Value_Name(StringClass& name, D3DRENDERSTA
 		name.Format("%f",*(float*)&value);
 		break;
 
-	//case D3DRS_ZBIAS:
+	//case D3DRS_DEPTHBIAS:
 	case D3DRS_STENCILREF:
 		name.Format("%d",value);
 		break;

@@ -35,6 +35,8 @@
  *   Commando_Assert_Handler -- Commando callback function for WWASSERT's                      *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+#include <atlbase.h>
+
 #include "init.h"
 #include "debug.h"
 #include "wwmath.h"

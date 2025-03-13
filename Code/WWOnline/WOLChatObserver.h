@@ -39,10 +39,7 @@
 #include "RefPtr.h"
 #include "WOLUser.h"
 
-namespace WOL 
-{
-#include <WOLAPI\wolapi.h>
-}
+#include <WOLAPI/wolapi.h>
 
 namespace WWOnline {
 

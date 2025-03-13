@@ -381,7 +381,7 @@ public:
 	**
 	**	swap_chain_ptr->Present (NULL, NULL, NULL, NULL);
 	**
-	**	DX8Wrapper::Set_Render_Target ((IDirect3DSurface8 *)NULL);
+	**	DX8Wrapper::Set_Render_Target ((IDirect3DSurface9 *)NULL);
 	**
 	*/
 	static IDirect3DSwapChain9 *	Create_Additional_Swap_Chain (HWND render_window);
@@ -1035,7 +1035,7 @@ WWINLINE void DX8Wrapper::Set_DX8_ZBias(int zbias)
 		DX8CALL(SetTransform(D3DTS_PROJECTION,(D3DMATRIX*)&tmp));
 	}
 	else {
-		//Set_DX8_Render_State (D3DRS_ZBIAS, ZBias);
+		//Set_DX8_Render_State (D3DRS_DEPTHBIAS, ZBias);
 	}
 }
 

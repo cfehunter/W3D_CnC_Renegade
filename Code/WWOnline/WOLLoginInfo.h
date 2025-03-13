@@ -39,12 +39,8 @@
 
 #include "RefCounted.h"
 #include "RefPtr.h"
-#include <WWLib\WideString.h>
-
-namespace WOL
-{
-#include <wolapi\wolapi.h>
-}
+#include <WWLib/WideString.h>
+#include <wolapi/wolapi.h>
 
 #if defined(_MSC_VER)
 #pragma warning(push, 3)

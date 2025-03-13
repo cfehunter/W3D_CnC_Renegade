@@ -40,12 +40,9 @@
 #include "WOLChannel.h"
 #include "WOLErrorUtil.h"
 #include "WOLString.h"
-#include <WWDebug\WWDebug.h>
+#include <WWDebug/WWDebug.h>
 
-namespace WOL
-{
-#include <WOLAPI\ChatDefs.h>
-}
+#include <WOLAPI/ChatDefs.h>
 
 namespace WWOnline {
 

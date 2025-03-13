@@ -40,10 +40,7 @@
 #include "RefCounted.h"
 #include "RefPtr.h"
 
-namespace WOL
-{
-#include <wolapi\wolapi.h>
-}
+#include <wolapi/wolapi.h>
 
 namespace WWOnline {
 

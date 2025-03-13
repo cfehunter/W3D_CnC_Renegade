@@ -34,6 +34,9 @@
  * Functions:                                                                                  *
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
+//#CFE_TODO: This has to be included before windows, and both headers are leaking all over the codebase... joy
+#include <atlbase.h>
+
 #include "combatgmode.h"
 #include "level.h"
 #include "input.h"

@@ -33,12 +33,8 @@
 ******************************************************************************/
 
 #include "WOLChatMsg.h"
-#include <WOLAPI\ChatDefs.h>
-
-namespace WOL
-{
-#include <WOLAPI\wolapi.h>
-}
+#include <WOLAPI/ChatDefs.h>
+#include <WOLAPI/wolapi.h>
 
 namespace WWOnline {
 

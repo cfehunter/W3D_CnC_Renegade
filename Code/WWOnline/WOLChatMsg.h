@@ -50,7 +50,7 @@
 
 namespace WOL
 {
-struct User;
+	struct User;
 }
 
 namespace WWOnline {
